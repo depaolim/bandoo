@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bandoo_room_view_list" model="ir.ui.view">
+        <field name="name">bandoo.room.list</field>
+        <field name="model">bandoo.room</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bandoo_room_action" model="ir.actions.act_window">
+        <field name="name">Aule</field>
+        <field name="res_model">bandoo.room</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem
+        id="menu_bandoo_room"
+        name="Aule"
+        parent="project.menu_project_config"
+        action="bandoo_room_action"
+        sequence="50"/>
+
+</odoo>

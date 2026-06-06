@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_project_form_bandoo_school" model="ir.ui.view">
+        <field name="name">project.project.form.bandoo.school</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="students" string="Studenti iscritti">
+                    <field name="enrolled_student_ids"
+                           widget="many2many_tags"
+                           placeholder="Cerca e aggiungi studenti..."
+                           domain="[('x_is_student', '=', True)]"
+                           context="{'default_x_is_student': True}"/>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+</odoo>

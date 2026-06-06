@@ -4,6 +4,7 @@
     'summary': 'Custom branding for the Bandoo login page',
     'category': 'Technical',
     'depends': [
+        'bandoo_school',
         'analytic',
         'auth_signup',
         'auth_totp',

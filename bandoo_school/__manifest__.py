@@ -1,0 +1,25 @@
+{
+    'name': 'Bandoo School',
+    'version': '18.0.1.0.0',
+    'summary': 'Gestione corsi, lezioni e presenze per la scuola di musica',
+    'category': 'Project',
+    'depends': [
+        'contacts',
+        'hr_timesheet',
+        'project',
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/bandoo_room_views.xml',
+        'views/res_partner_views.xml',
+        'views/project_project_views.xml',
+        'views/project_task_views.xml',
+        'views/project_task_calendar.xml',
+        'views/lesson_attendance_views.xml',
+    ],
+    'author': 'Marco De Paoli',
+    'maintainer': 'Marco De Paoli',
+    'installable': True,
+    'auto_install': False,
+    'license': 'LGPL-3',
+}

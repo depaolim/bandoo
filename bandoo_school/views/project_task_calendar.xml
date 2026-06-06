@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_task_calendar_bandoo_school" model="ir.ui.view">
+        <field name="name">project.task.calendar.bandoo.school</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_calendar"/>
+        <field name="arch" type="xml">
+            <xpath expr="//calendar" position="attributes">
+                <attribute name="color">room_id</attribute>
+            </xpath>
+            <xpath expr="//calendar" position="inside">
+                <field name="room_id" invisible="not room_id"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

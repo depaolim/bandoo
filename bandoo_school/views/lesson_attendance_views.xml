@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bandoo_lesson_attendance_view_pivot" model="ir.ui.view">
+        <field name="name">bandoo.lesson.attendance.pivot</field>
+        <field name="model">bandoo.lesson.attendance</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="partner_id" type="row"/>
+                <field name="project_id" type="row"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="task_id" type="measure" string="Lezioni"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="bandoo_lesson_attendance_view_list" model="ir.ui.view">
+        <field name="name">bandoo.lesson.attendance.list</field>
+        <field name="model">bandoo.lesson.attendance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date"/>
+                <field name="project_id"/>
+                <field name="partner_id"/>
+                <field name="task_id"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'present'"
+                       decoration-danger="status == 'absent'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bandoo_lesson_attendance_action" model="ir.actions.act_window">
+        <field name="name">Presenze studenti</field>
+        <field name="res_model">bandoo.lesson.attendance</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="domain">[('status', '=', 'present')]</field>
+    </record>
+
+    <menuitem
+        id="menu_bandoo_lesson_attendance"
+        name="Presenze studenti"
+        parent="project.menu_project_report"
+        action="bandoo_lesson_attendance_action"
+        sequence="20"/>
+
+</odoo>

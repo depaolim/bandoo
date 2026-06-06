@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_task_form_bandoo_school" model="ir.ui.view">
+        <field name="name">project.task.form.bandoo.school</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <!-- Aula: aggiungi dopo il div date_deadline -->
+            <div id="date_deadline_and_recurring_task" position="after">
+                <field name="room_id" invisible="not project_id"/>
+            </div>
+            <!-- Tab presenze -->
+            <notebook position="inside">
+                <page name="attendance" string="Presenze" invisible="not project_id">
+                    <field name="attendance_line_ids">
+                        <list editable="bottom">
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="status"
+                                   decoration-success="status == 'present'"
+                                   decoration-danger="status == 'absent'"/>
+                            <field name="note" optional="show"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+</odoo>
