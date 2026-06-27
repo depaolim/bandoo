@@ -14,6 +14,7 @@
         'views/res_partner_views.xml',
         'views/sale_order_views.xml',
         'views/enrollment_settlement_views.xml',
+        'wizards/enrollment_views.xml',
     ],
     'author': 'Marco De Paoli',
     'maintainer': 'Marco De Paoli',

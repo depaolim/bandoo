@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <field name="user_id" position="after">
                 <field name="x_is_course"/>
+                <field name="x_is_solfeggio" invisible="not x_is_course"/>
                 <field name="x_list_price" invisible="not x_is_course"/>
                 <field name="x_lesson_target" invisible="not x_is_course"/>
             </field>

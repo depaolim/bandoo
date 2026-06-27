@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bandoo_enrollment_form" model="ir.ui.view">
+        <field name="name">bandoo.enrollment.form</field>
+        <field name="model">bandoo.enrollment</field>
+        <field name="arch" type="xml">
+            <form string="Nuova iscrizione">
+                <group>
+                    <group string="Studente">
+                        <field name="student_id" options="{'no_create': True}"/>
+                        <field name="guardian_id"/>
+                    </group>
+                    <group string="Strumento">
+                        <field name="instrument_project_id" options="{'no_create': True}"/>
+                        <field name="instrument_price"/>
+                    </group>
+                </group>
+                <group string="Solfeggio">
+                    <field name="add_solfeggio"/>
+                    <field name="solfeggio_project_id"
+                           invisible="not add_solfeggio"
+                           required="add_solfeggio"
+                           options="{'no_create': True}"/>
+                    <field name="solfeggio_price" invisible="not add_solfeggio"/>
+                </group>
+                <footer>
+                    <button name="action_create_order" type="object"
+                            string="Crea ordine" class="btn-primary"/>
+                    <button string="Annulla" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="bandoo_enrollment_action" model="ir.actions.act_window">
+        <field name="name">Nuova iscrizione</field>
+        <field name="res_model">bandoo.enrollment</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_bandoo_enrollment"
+        name="Nuova iscrizione"
+        parent="sale.sale_order_menu"
+        action="bandoo_enrollment_action"
+        sequence="40"/>
+
+</odoo>
