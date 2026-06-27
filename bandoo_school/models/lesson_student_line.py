@@ -14,6 +14,7 @@ class LessonStudentLine(models.Model):
     status = fields.Selection([
         ('present', 'Presente'),
         ('absent', 'Assente'),
+        ('absent_justified', 'Assente giustificato'),
     ], string='Stato', default='present', required=True)
     note = fields.Char(string='Note')
 

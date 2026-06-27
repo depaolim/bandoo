@@ -13,6 +13,7 @@ class LessonAttendance(models.Model):
     status = fields.Selection([
         ('present', 'Presente'),
         ('absent', 'Assente'),
+        ('absent_justified', 'Assente giustificato'),
     ], string='Stato', readonly=True)
     date = fields.Date(string='Data lezione', readonly=True)
 

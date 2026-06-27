@@ -18,7 +18,8 @@
                             <field name="partner_id" options="{'no_create': True}"/>
                             <field name="status"
                                    decoration-success="status == 'present'"
-                                   decoration-danger="status == 'absent'"/>
+                                   decoration-danger="status == 'absent'"
+                                   decoration-warning="status == 'absent_justified'"/>
                             <field name="note" optional="show"/>
                         </list>
                     </field>
