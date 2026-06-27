@@ -15,6 +15,12 @@ class LessonAttendance(models.Model):
         ('absent', 'Assente'),
         ('absent_justified', 'Assente giustificato'),
     ], string='Stato', readonly=True)
+    billing_status = fields.Selection([
+        ('pays', 'Paga'),
+        ('free', 'Non paga'),
+    ], string='Ai fini retta', readonly=True,
+        help='Presente e assente ingiustificato pagano la lezione; '
+             'assente giustificato non paga.')
     date = fields.Date(string='Data lezione', readonly=True)
 
     def init(self):
@@ -27,6 +33,8 @@ class LessonAttendance(models.Model):
                 sl.project_id,
                 sl.partner_id,
                 sl.status,
+                CASE WHEN sl.status = 'absent_justified'
+                     THEN 'free' ELSE 'pays' END AS billing_status,
                 MIN(al.date) AS date
             FROM bandoo_lesson_student_line sl
             JOIN account_analytic_line al ON al.task_id = sl.task_id
