@@ -3,3 +3,4 @@ access_bandoo_room,bandoo.room,model_bandoo_room,base.group_user,1,0,0,0
 access_bandoo_room_manager,bandoo.room manager,model_bandoo_room,project.group_project_manager,1,1,1,1
 access_bandoo_lesson_student_line,bandoo.lesson.student.line,model_bandoo_lesson_student_line,base.group_user,1,1,1,1
 access_bandoo_lesson_attendance,bandoo.lesson.attendance,model_bandoo_lesson_attendance,base.group_user,1,0,0,0
+access_bandoo_lesson_generate,bandoo.lesson.generate,model_bandoo_lesson_generate,base.group_user,1,1,1,1

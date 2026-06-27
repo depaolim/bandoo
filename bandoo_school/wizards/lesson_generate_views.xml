@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bandoo_lesson_generate_form" model="ir.ui.view">
+        <field name="name">bandoo.lesson.generate.form</field>
+        <field name="model">bandoo.lesson.generate</field>
+        <field name="arch" type="xml">
+            <form string="Genera lezioni">
+                <group>
+                    <group>
+                        <field name="project_id"/>
+                        <field name="room_id"/>
+                        <field name="user_ids" widget="many2many_tags"/>
+                        <field name="name_prefix"/>
+                    </group>
+                    <group>
+                        <field name="date_start"/>
+                        <field name="start_time" widget="float_time"/>
+                        <field name="count"/>
+                        <field name="interval_weeks"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_generate" type="object" string="Genera"
+                            class="btn-primary"/>
+                    <button string="Annulla" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="bandoo_lesson_generate_action" model="ir.actions.act_window">
+        <field name="name">Genera lezioni</field>
+        <field name="res_model">bandoo.lesson.generate</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_bandoo_lesson_generate"
+        name="Genera lezioni"
+        parent="project.menu_project_management"
+        action="bandoo_lesson_generate_action"
+        sequence="50"/>
+
+</odoo>

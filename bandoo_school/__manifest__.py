@@ -16,6 +16,7 @@
         'views/project_task_views.xml',
         'views/project_task_calendar.xml',
         'views/lesson_attendance_views.xml',
+        'wizards/lesson_generate_views.xml',
     ],
     'author': 'Marco De Paoli',
     'maintainer': 'Marco De Paoli',
