@@ -5,6 +5,7 @@
     'category': 'Technical',
     'depends': [
         'bandoo_school',
+        'bandoo_school_sale',
         'analytic',
         'auth_signup',
         'auth_totp',
