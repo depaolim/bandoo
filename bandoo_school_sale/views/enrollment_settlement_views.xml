@@ -9,6 +9,7 @@
                 <field name="partner_id"/>
                 <field name="project_id"/>
                 <field name="payer_id" optional="show"/>
+                <field name="order_id" optional="hide"/>
                 <field name="annual_price" sum="Totale"/>
                 <field name="target"/>
                 <field name="lessons_held"/>
@@ -19,6 +20,7 @@
                 <field name="installment_1" sum="Totale"/>
                 <field name="installment_2" sum="Totale"/>
                 <field name="installment_3" sum="Totale"/>
+                <field name="installment_3_order"/>
             </list>
         </field>
     </record>
@@ -50,6 +52,7 @@
                         <field name="installment_1"/>
                         <field name="installment_2"/>
                         <field name="installment_3"/>
+                        <field name="installment_3_order"/>
                     </group>
                 </sheet>
             </form>
@@ -69,6 +72,8 @@
                             context="{'group_by': 'project_id'}"/>
                     <filter name="group_payer" string="Pagatore"
                             context="{'group_by': 'payer_id'}"/>
+                    <filter name="group_order" string="Ordine"
+                            context="{'group_by': 'order_id'}"/>
                 </group>
             </search>
         </field>

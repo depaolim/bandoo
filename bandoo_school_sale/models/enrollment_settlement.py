@@ -29,7 +29,14 @@ class EnrollmentSettlement(models.Model):
     installment_1 = fields.Float(string='Rata 1', compute='_compute_amounts')
     installment_2 = fields.Float(string='Rata 2', compute='_compute_amounts')
     installment_3 = fields.Float(
-        string='Rata 3 (conguaglio)', compute='_compute_amounts')
+        string='Rata 3 (conguaglio)', compute='_compute_amounts',
+        help="P − rata 1 − rata 2 − detrazione, senza clamp: se negativa è il "
+             "credito che la riga porta alle altre righe dello stesso ordine.")
+    installment_3_order = fields.Float(
+        string='Rata 3 ordine', compute='_compute_installment_3_order',
+        help="Somma delle rate 3 di tutte le righe dell'ordine, mai negativa: "
+             "il credito di una riga abbatte le altre; il residuo oltre "
+             "l'ordine è perso.")
 
     @api.depends('annual_price', 'target', 'lessons_held', 'justified_absences')
     def _compute_amounts(self):
@@ -43,10 +50,22 @@ class EnrollmentSettlement(models.Model):
             )
             rec.installment_1 = round(price / 3)
             rec.installment_2 = round(price / 3)
-            rec.installment_3 = max(
-                0.0,
-                price - rec.installment_1 - rec.installment_2 - rec.deduction,
+            rec.installment_3 = (
+                price - rec.installment_1 - rec.installment_2 - rec.deduction
             )
+
+    @api.depends('installment_3', 'order_id')
+    def _compute_installment_3_order(self):
+        # Sui record reali si espande alle righe sorelle, così il totale
+        # ordine è giusto anche su recordset filtrati; i record virtuali dei
+        # test non esistono sul DB e si aggregano dentro il recordset.
+        orders = self.filtered(
+            lambda r: not isinstance(r.id, models.NewId)).order_id
+        siblings = self.search([('order_id', 'in', orders.ids)])
+        for order, recs in (self | siblings).grouped('order_id').items():
+            total = max(0.0, sum(recs.mapped('installment_3')))
+            for rec in recs:
+                rec.installment_3_order = total
 
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
