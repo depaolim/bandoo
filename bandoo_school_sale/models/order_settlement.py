@@ -3,7 +3,7 @@ from odoo import api, fields, models, tools
 
 class OrderSettlement(models.Model):
     _name = 'bandoo.order.settlement'
-    _description = 'Conguaglio ordine'
+    _description = 'Conguaglio per ordine'
     _auto = False
     _rec_name = 'order_id'
     _order = 'order_id'

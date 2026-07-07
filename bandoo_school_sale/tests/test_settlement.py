@@ -28,9 +28,9 @@ class TestSettlementArithmetic(TransactionCase):
         # 280 - 93 - 93 - 20 = 74
         self.assertEqual(s.installment_3, 74.0)
 
-    def test_rata3_riga_negativa_senza_clamp(self):
+    def test_rata3_riga_negativa_non_azzerata(self):
         # Detrazione enorme (poche tenute): la rata 3 di riga resta negativa
-        # (credito); il clamp a zero vive solo sul conguaglio per ordine.
+        # (credito); l'azzeramento vive solo sul conguaglio per ordine.
         s = self._settlement(280.0, 28, 2, 1)
         self.assertEqual(s.missed_lessons, 26)
         self.assertEqual(s.deduction, 270.0)

@@ -78,14 +78,14 @@
     </record>
 
     <record id="bandoo_enrollment_settlement_action" model="ir.actions.act_window">
-        <field name="name">Conguagli iscrizioni</field>
+        <field name="name">Conguagli per iscrizione</field>
         <field name="res_model">bandoo.enrollment.settlement</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem
         id="menu_bandoo_enrollment_settlement"
-        name="Conguagli iscrizioni"
+        name="Conguagli per iscrizione"
         parent="sale.sale_order_menu"
         action="bandoo_enrollment_settlement_action"
         sequence="50"/>

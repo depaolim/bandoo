@@ -3,7 +3,7 @@ from odoo import api, fields, models, tools
 
 class EnrollmentSettlement(models.Model):
     _name = 'bandoo.enrollment.settlement'
-    _description = 'Conguaglio iscrizione'
+    _description = 'Conguaglio per iscrizione'
     _auto = False
     _rec_name = 'partner_id'
     _order = 'project_id, partner_id'
@@ -30,7 +30,7 @@ class EnrollmentSettlement(models.Model):
     installment_2 = fields.Float(string='Rata 2', compute='_compute_amounts')
     installment_3 = fields.Float(
         string='Rata 3 (conguaglio)', compute='_compute_amounts',
-        help="P − rata 1 − rata 2 − detrazione, senza clamp: se negativa è il "
+        help="P − rata 1 − rata 2 − detrazione, senza azzeramento: se negativa è il "
              "credito che la riga porta alle altre righe dello stesso ordine. "
              "Le rate dovute si leggono sul conguaglio per ordine.")
 
