@@ -1,4 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_bandoo_enrollment_settlement,bandoo.enrollment.settlement,model_bandoo_enrollment_settlement,sales_team.group_sale_salesman,1,0,0,0
 access_bandoo_enrollment_settlement_manager,bandoo.enrollment.settlement manager,model_bandoo_enrollment_settlement,sales_team.group_sale_manager,1,0,0,0
+access_bandoo_order_settlement,bandoo.order.settlement,model_bandoo_order_settlement,sales_team.group_sale_salesman,1,0,0,0
+access_bandoo_order_settlement_manager,bandoo.order.settlement manager,model_bandoo_order_settlement,sales_team.group_sale_manager,1,0,0,0
 access_bandoo_enrollment,bandoo.enrollment,model_bandoo_enrollment,sales_team.group_sale_salesman,1,1,1,1

@@ -28,32 +28,13 @@ class TestSettlementArithmetic(TransactionCase):
         # 280 - 93 - 93 - 20 = 74
         self.assertEqual(s.installment_3, 74.0)
 
-    def test_clamp_rata3_a_zero(self):
+    def test_rata3_riga_negativa_senza_clamp(self):
         # Detrazione enorme (poche tenute): la rata 3 di riga resta negativa
-        # (credito), il clamp a zero avviene solo sul totale ordine.
+        # (credito); il clamp a zero vive solo sul conguaglio per ordine.
         s = self._settlement(280.0, 28, 2, 1)
         self.assertEqual(s.missed_lessons, 26)
         self.assertEqual(s.deduction, 270.0)
         self.assertEqual(s.installment_3, -176.0)  # 280 - 186 - 270
-        self.assertEqual(s.installment_3_order, 0.0)
-
-    def test_ordine_credito_compensa_altra_riga(self):
-        # Esempio guida della modifica C: 2 giustificate a pianoforte (credito
-        # 66) + solfeggio tutto frequentato -> la rata 3 dell'ordine si azzera.
-        piano = self._settlement(400.0, 4, 4, 2)
-        solf = self._settlement(120.0, 4, 4, 0)
-        self.assertEqual(piano.installment_3, -66.0)  # 400 - 266 - 200
-        self.assertEqual(solf.installment_3, 40.0)    # 120 - 80 - 0
-        self.assertEqual((piano | solf).mapped('installment_3_order'),
-                         [0.0, 0.0])  # max(0, -26)
-
-    def test_ordine_somma_residui_positivi(self):
-        # Nessun clamp: la rata 3 ordine e' la semplice somma delle righe.
-        piano = self._settlement(400.0, 4, 4, 1)
-        solf = self._settlement(120.0, 4, 4, 0)
-        self.assertEqual(piano.installment_3, 34.0)  # 400 - 266 - 100
-        self.assertEqual((piano | solf).mapped('installment_3_order'),
-                         [74.0, 74.0])
 
     def test_target_zero_nessuna_divisione(self):
         # target=0 non deve sollevare ZeroDivisionError.
@@ -150,7 +131,6 @@ class TestSettlementIntegration(TransactionCase):
         # prezzo lezione 100; detrazione (1+2)*100 = 300; 400-266-300 = -166
         self.assertEqual(s.deduction, 300.0)
         self.assertEqual(s.installment_3, -166.0)
-        self.assertEqual(s.installment_3_order, 0.0)  # clamp sul totale ordine
 
         # Recupero collettivo: la 3a lezione viene tenuta (timesheet).
         # Senza alcun link esplicito, lessons_held sale -> missed scende (Buco 1).
@@ -219,8 +199,16 @@ class TestSettlementIntegration(TransactionCase):
         solf = settlements - strumento
         self.assertEqual(strumento.installment_3, -66.0)  # 400 - 266 - 200
         self.assertEqual(solf.installment_3, 40.0)        # 120 - 80 - 0
-        # max(0, -66 + 40) = 0, ripetuta su entrambe le righe.
-        self.assertEqual(settlements.mapped('installment_3_order'), [0.0, 0.0])
+
+        order_settlement = self.env['bandoo.order.settlement'].search(
+            [('order_id', '=', order.id)])
+        self.assertEqual(order_settlement.total_price, 520.0)
+        self.assertEqual(order_settlement.deduction, 200.0)
+        self.assertEqual(order_settlement.installment_1, 173.0)  # round(520/3)
+        self.assertEqual(order_settlement.installment_2, 173.0)
+        # max(0, 520 - 346 - 200) = 0: il credito dello strumento assorbe
+        # il solfeggio, il residuo (26) e' perso.
+        self.assertEqual(order_settlement.installment_3, 0.0)
 
     def test_ordini_distinti_non_si_compensano(self):
         # Il credito di un ordine non abbatte la rata 3 di un altro ordine.
@@ -249,11 +237,56 @@ class TestSettlementIntegration(TransactionCase):
 
         self.env.flush_all()
         self.env.invalidate_all()
-        settlements = self.env['bandoo.enrollment.settlement'].search(
-            [('partner_id', 'in', (self.student | student2).ids)])
-        s1 = settlements.filtered(lambda s: s.partner_id == self.student)
-        s2 = settlements - s1
-        self.assertEqual(s1.installment_3, -66.0)
-        self.assertEqual(s1.installment_3_order, 0.0)
+        order_settlements = self.env['bandoo.order.settlement'].search(
+            [('order_id', 'in', (self.order | order2).ids)])
+        s1 = order_settlements.filtered(lambda s: s.order_id == self.order)
+        s2 = order_settlements - s1
+        # Ordine con credito (detrazione 200 > residuo): rata 3 a 0...
+        self.assertEqual(s1.deduction, 200.0)
+        self.assertEqual(s1.installment_3, 0.0)  # max(0, 400 - 266 - 200)
+        # ...ma non abbatte la rata 3 dell'altro ordine.
+        self.assertEqual(s2.deduction, 0.0)
         self.assertEqual(s2.installment_3, 134.0)  # 400 - 266 - 0
-        self.assertEqual(s2.installment_3_order, 134.0)
+
+    def test_rate_ordine_arrotondate_sul_totale(self):
+        # Le rate 1/2 dell'ordine sono round(totale/3), non la somma delle
+        # rate di riga: due corsi da 100 danno 67 (round(200/3)), non 33+33.
+        courses = self.env['project.project'].create([
+            {'name': name, 'x_is_course': True,
+             'x_list_price': 100.0, 'x_lesson_target': 2}
+            for name in ('Canto', 'Batteria')
+        ])
+        product = self.env.ref('bandoo_school_sale.product_enrollment')
+        order = self.env['sale.order'].create({
+            'partner_id': self.guardian.id,
+            'order_line': [
+                (0, 0, {'product_id': product.id,
+                        'x_student_id': self.student.id,
+                        'x_project_id': course.id, 'price_unit': 100.0,
+                        'product_uom_qty': 1.0, 'name': course.name})
+                for course in courses
+            ],
+        })
+        order.action_confirm()
+        # Corsi interamente svolti e frequentati: nessuna detrazione.
+        for course in courses:
+            for n in range(2):
+                task = self.env['project.task'].create({
+                    'name': f'L{n}', 'project_id': course.id,
+                    'date_deadline': '2026-09-01 13:00:00',
+                })
+                self.env['account.analytic.line'].create({
+                    'name': 'ore', 'task_id': task.id,
+                    'project_id': course.id, 'unit_amount': 1.0,
+                    'employee_id': self.employee.id, 'date': '2026-09-01',
+                })
+
+        self.env.flush_all()
+        self.env.invalidate_all()
+        order_settlement = self.env['bandoo.order.settlement'].search(
+            [('order_id', '=', order.id)])
+        self.assertEqual(order_settlement.total_price, 200.0)
+        self.assertEqual(order_settlement.deduction, 0.0)
+        self.assertEqual(order_settlement.installment_1, 67.0)  # round(200/3)
+        self.assertEqual(order_settlement.installment_2, 67.0)
+        self.assertEqual(order_settlement.installment_3, 66.0)  # 200 - 134
