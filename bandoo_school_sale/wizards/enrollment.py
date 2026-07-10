@@ -35,7 +35,7 @@ class Enrollment(models.TransientModel):
     @api.onchange('student_id')
     def _onchange_student_id(self):
         if self.student_id:
-            self.guardian_id = self.student_id.x_guardian_id or self.student_id
+            self.guardian_id = self.student_id.parent_id or self.student_id
 
     @api.onchange('instrument_project_id')
     def _onchange_instrument(self):

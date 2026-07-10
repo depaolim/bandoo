@@ -8,9 +8,6 @@
         <field name="arch" type="xml">
             <field name="category_id" position="after">
                 <field name="x_is_member"/>
-                <field name="x_guardian_id"
-                       invisible="not x_is_student"
-                       domain="[('id', '!=', id)]"/>
             </field>
         </field>
     </record>

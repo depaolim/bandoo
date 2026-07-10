@@ -69,10 +69,11 @@ class TestSettlementIntegration(TransactionCase):
             'name': 'Chitarra', 'x_is_course': True,
             'x_list_price': 400.0, 'x_lesson_target': 4,
         })
+        self.guardian = self.env['res.partner'].create({'name': 'Genitore'})
         self.student = self.env['res.partner'].create({
             'name': 'Allievo', 'x_is_student': True, 'x_is_member': True,
+            'parent_id': self.guardian.id,
         })
-        self.guardian = self.env['res.partner'].create({'name': 'Genitore'})
         self.employee = self.env['hr.employee'].create({'name': 'Maestro'})
 
         product = self.env.ref('bandoo_school_sale.product_enrollment')
