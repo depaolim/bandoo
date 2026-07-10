@@ -4,10 +4,21 @@ from odoo import fields, models
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    x_is_course = fields.Boolean(string='È un corso', default=False)
-    x_is_solfeggio = fields.Boolean(
-        string='Corso di solfeggio', default=False,
-        help='Corso di teoria proposto in automatico insieme allo strumento.',
+    x_enrollment_line_ids = fields.One2many(
+        'sale.order.line', 'x_project_id', string='Righe di iscrizione')
+    # Ridichiarato per dare al compute (in bandoo_school) le dipendenze
+    # reali: senza, il valore resterebbe in cache anche dopo la conferma
+    # o l'annullamento di un ordine nella stessa transazione.
+    enrolled_student_ids = fields.Many2many(
+        'res.partner', string='Studenti iscritti',
+        compute='_compute_enrolled_student_ids',
+        depends=['x_enrollment_line_ids.state',
+                 'x_enrollment_line_ids.x_student_id'],
     )
-    x_list_price = fields.Float(string='Prezzo annuo (listino)', default=0.0)
-    x_lesson_target = fields.Integer(string='Lezioni previste', default=28)
+
+    def _get_enrolled_students(self):
+        """Iscritti = studenti delle righe d'ordine confermate del corso."""
+        self.ensure_one()
+        lines = self.x_enrollment_line_ids.filtered(
+            lambda l: l.state == 'sale' and l.x_student_id)
+        return super()._get_enrolled_students() | lines.x_student_id

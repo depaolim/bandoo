@@ -10,22 +10,15 @@ class SaleOrderLine(models.Model):
     )
     x_project_id = fields.Many2one(
         'project.project', string='Corso',
-        domain=[('x_is_course', '=', True)],
+        compute='_compute_x_project_id', store=True,
     )
 
-    @api.onchange('x_project_id')
-    def _onchange_x_project_id(self):
-        """Riga d'iscrizione: prodotto generico + prezzo concordato dal listino corso.
-
-        Il prezzo proposto resta modificabile: è il concordato a fare fede (vedi spec).
-        """
-        if not self.x_project_id:
-            return
-        if not self.product_id:
-            product = self.env.ref(
-                'bandoo_school_sale.product_enrollment', raise_if_not_found=False,
+    @api.depends('project_id', 'product_id')
+    def _compute_x_project_id(self):
+        """Progetto del corso: per gli individuali è quello generato alla
+        conferma (project_id standard), per i collettivi quello condiviso
+        indicato sul prodotto."""
+        for line in self:
+            line.x_project_id = (
+                line.project_id or line.product_id.x_course_project_id
             )
-            if product:
-                self.product_id = product
-        self.name = self.x_project_id.display_name
-        self.price_unit = self.x_project_id.x_list_price

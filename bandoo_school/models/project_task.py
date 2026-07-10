@@ -14,9 +14,13 @@ class ProjectTask(models.Model):
     def create(self, vals_list):
         tasks = super().create(vals_list)
         for task in tasks:
-            if task.project_id.enrolled_student_ids:
+            students = (
+                task.project_id._get_enrolled_students()
+                if task.project_id else self.env['res.partner']
+            )
+            if students:
                 task.attendance_line_ids = [
                     (0, 0, {'partner_id': s.id, 'status': 'present'})
-                    for s in task.project_id.enrolled_student_ids
+                    for s in students
                 ]
         return tasks

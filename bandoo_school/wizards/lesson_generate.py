@@ -2,7 +2,7 @@ from datetime import datetime, time, timedelta
 
 import pytz
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -28,6 +28,16 @@ class LessonGenerate(models.TransientModel):
     interval_weeks = fields.Integer(
         string='Cadenza (settimane)', required=True, default=1,
     )
+
+    @api.onchange('project_id')
+    def _onchange_project_id(self):
+        """Proposte dal corso (modificabili): insegnante e numero lezioni."""
+        if not self.project_id:
+            return
+        if self.project_id.user_id:
+            self.user_ids = self.project_id.user_id
+        if self.project_id.x_lesson_target:
+            self.count = self.project_id.x_lesson_target
 
     def action_generate(self):
         self.ensure_one()

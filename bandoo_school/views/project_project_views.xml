@@ -6,12 +6,16 @@
         <field name="model">project.project</field>
         <field name="inherit_id" ref="project.edit_project"/>
         <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="x_lesson_target"/>
+            </field>
             <notebook position="inside">
                 <page name="students" string="Studenti iscritti">
-                    <field name="enrolled_student_ids"
-                           widget="many2many_tags"
-                           placeholder="Cerca e aggiungi studenti..."
-                           domain="[('is_company', '=', False)]"/>
+                    <field name="enrolled_student_ids" widget="many2many_tags"/>
+                    <button name="action_align_future_attendance"
+                            type="object"
+                            string="Allinea presenze lezioni future"
+                            help="Aggiunge gli iscritti mancanti alle presenze delle lezioni non ancora svolte."/>
                 </page>
             </notebook>
         </field>

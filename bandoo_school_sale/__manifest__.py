@@ -6,15 +6,14 @@
     'depends': [
         'bandoo_school',
         'sale_management',
+        'sale_project',
     ],
     'data': [
         'security/ir.model.access.csv',
-        'data/product_data.xml',
-        'views/project_project_views.xml',
+        'views/product_template_views.xml',
         'views/res_partner_views.xml',
         'views/sale_order_views.xml',
         'views/enrollment_settlement_views.xml',
-        'wizards/enrollment_views.xml',
     ],
     'author': 'Marco De Paoli',
     'maintainer': 'Marco De Paoli',
