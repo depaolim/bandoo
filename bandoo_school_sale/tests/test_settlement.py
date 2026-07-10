@@ -359,6 +359,33 @@ class TestEnrollmentFlow(BandooCase):
 
 
 @tagged('standard', 'at_install', 'bandoo')
+class TestLessonFlags(BandooCase):
+    """Punto 4/5: 'Ai fini retta' derivato dallo stato, 'svolta' dalle ore."""
+
+    def test_billing_status_derivato(self):
+        task = self._task('L1')
+        line = task.attendance_line_ids
+        self.assertEqual(line.billing_status, 'pays')
+        line.status = 'absent'
+        self.assertEqual(line.billing_status, 'pays')
+        line.status = 'absent_justified'
+        self.assertEqual(line.billing_status, 'free')
+
+    def test_svolta_derivata_dalle_ore(self):
+        t1, t2 = self._task('L1'), self._task('L2')
+        self.assertFalse(t1.x_is_held)
+        self._timesheet(t1)
+        self.assertTrue(t1.x_is_held)
+        Task = self.env['project.task']
+        self.assertEqual(
+            Task.search([('project_id', '=', self.course.id),
+                         ('x_is_held', '=', True)]), t1)
+        self.assertEqual(
+            Task.search([('project_id', '=', self.course.id),
+                         ('x_is_held', '=', False)]), t2)
+
+
+@tagged('standard', 'at_install', 'bandoo')
 class TestIndividualCourse(BandooCase):
     """Corso individuale: progetto generato da template alla conferma."""
 

@@ -11,6 +11,7 @@
             </xpath>
             <xpath expr="//calendar" position="inside">
                 <field name="room_id" invisible="not room_id"/>
+                <field name="x_is_held"/>
             </xpath>
         </field>
     </record>
