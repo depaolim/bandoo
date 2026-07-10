@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class LessonStudentLine(models.Model):
@@ -16,7 +16,20 @@ class LessonStudentLine(models.Model):
         ('absent', 'Assente'),
         ('absent_justified', 'Assente giustificato'),
     ], string='Stato', default='present', required=True)
+    billing_status = fields.Selection([
+        ('pays', 'Paga'),
+        ('free', 'Non paga'),
+    ], string='Ai fini retta', compute='_compute_billing_status',
+        help='Presente e assente pagano la lezione; '
+             'assente giustificato non paga.')
     note = fields.Char(string='Note')
+
+    @api.depends('status')
+    def _compute_billing_status(self):
+        for line in self:
+            line.billing_status = (
+                'free' if line.status == 'absent_justified' else 'pays'
+            )
 
     _sql_constraints = [
         ('unique_task_partner', 'UNIQUE(task_id, partner_id)',

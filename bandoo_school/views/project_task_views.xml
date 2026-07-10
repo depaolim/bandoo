@@ -9,6 +9,7 @@
             <!-- Aula: aggiungi dopo il div date_deadline -->
             <div id="date_deadline_and_recurring_task" position="after">
                 <field name="room_id" invisible="not project_id"/>
+                <field name="x_is_held" invisible="not project_id"/>
             </div>
             <!-- Tab presenze -->
             <notebook position="inside">
@@ -20,11 +21,27 @@
                                    decoration-success="status == 'present'"
                                    decoration-danger="status == 'absent'"
                                    decoration-warning="status == 'absent_justified'"/>
+                            <field name="billing_status"/>
                             <field name="note" optional="show"/>
                         </list>
                     </field>
                 </page>
             </notebook>
+        </field>
+    </record>
+
+    <record id="view_task_search_bandoo_school" model="ir.ui.view">
+        <field name="name">project.task.search.bandoo.school</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_search_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="held" string="Svolte"
+                        domain="[('x_is_held', '=', True)]"/>
+                <filter name="not_held" string="Da svolgere"
+                        domain="[('x_is_held', '=', False)]"/>
+            </xpath>
         </field>
     </record>
 
