@@ -11,7 +11,6 @@
     'data': [
         'security/ir.model.access.csv',
         'views/bandoo_room_views.xml',
-        'views/res_partner_views.xml',
         'views/project_project_views.xml',
         'views/project_task_views.xml',
         'views/project_task_calendar.xml',

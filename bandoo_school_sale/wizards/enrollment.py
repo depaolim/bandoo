@@ -8,7 +8,7 @@ class Enrollment(models.TransientModel):
 
     student_id = fields.Many2one(
         'res.partner', string='Studente', required=True,
-        domain=[('x_is_student', '=', True), ('x_is_member', '=', True)],
+        domain=[('is_company', '=', False), ('x_is_member', '=', True)],
     )
     guardian_id = fields.Many2one(
         'res.partner', string='Intestatario retta', required=True,

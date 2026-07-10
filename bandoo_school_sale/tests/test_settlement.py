@@ -71,7 +71,7 @@ class TestSettlementIntegration(TransactionCase):
         })
         self.guardian = self.env['res.partner'].create({'name': 'Genitore'})
         self.student = self.env['res.partner'].create({
-            'name': 'Allievo', 'x_is_student': True, 'x_is_member': True,
+            'name': 'Allievo', 'x_is_member': True,
             'parent_id': self.guardian.id,
         })
         self.employee = self.env['hr.employee'].create({'name': 'Maestro'})
@@ -158,7 +158,7 @@ class TestSettlementIntegration(TransactionCase):
             'x_list_price': 120.0, 'x_lesson_target': 4,
         })
         student = self.env['res.partner'].create({
-            'name': 'Allievo2', 'x_is_student': True, 'x_is_member': True,
+            'name': 'Allievo2', 'x_is_member': True,
         })
         product = self.env.ref('bandoo_school_sale.product_enrollment')
         order = self.env['sale.order'].create({
@@ -214,7 +214,7 @@ class TestSettlementIntegration(TransactionCase):
     def test_ordini_distinti_non_si_compensano(self):
         # Il credito di un ordine non abbatte la rata 3 di un altro ordine.
         student2 = self.env['res.partner'].create({
-            'name': 'Allievo2', 'x_is_student': True, 'x_is_member': True,
+            'name': 'Allievo2', 'x_is_member': True,
         })
         product = self.env.ref('bandoo_school_sale.product_enrollment')
         order2 = self.env['sale.order'].create({

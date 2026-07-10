@@ -6,7 +6,7 @@ class SaleOrderLine(models.Model):
 
     x_student_id = fields.Many2one(
         'res.partner', string='Studente',
-        domain=[('x_is_student', '=', True)],
+        domain=[('is_company', '=', False)],
     )
     x_project_id = fields.Many2one(
         'project.project', string='Corso',

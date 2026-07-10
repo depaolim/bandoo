@@ -10,5 +10,5 @@ class ProjectProject(models.Model):
         'project_id',
         'partner_id',
         string='Studenti iscritti',
-        domain=[('x_is_student', '=', True)],
+        domain=[('is_company', '=', False)],
     )

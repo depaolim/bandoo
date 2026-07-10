@@ -11,8 +11,7 @@
                     <field name="enrolled_student_ids"
                            widget="many2many_tags"
                            placeholder="Cerca e aggiungi studenti..."
-                           domain="[('x_is_student', '=', True)]"
-                           context="{'default_x_is_student': True}"/>
+                           domain="[('is_company', '=', False)]"/>
                 </page>
             </notebook>
         </field>
