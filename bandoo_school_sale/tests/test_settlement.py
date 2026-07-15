@@ -268,6 +268,39 @@ class TestSettlementIntegration(BandooCase):
         self.assertEqual(order_settlement.installment_2, 67.0)
         self.assertEqual(order_settlement.installment_3, 66.0)  # 200 - 134
 
+    def test_iscrizione_tardiva_conteggio_per_iscritto(self):
+        # 4 lezioni tutte svolte PRIMA dell'iscrizione tardiva.
+        for n in range(4):
+            self._timesheet(self._task(f'L{n}'))
+        late = self.env['res.partner'].create({
+            'name': 'Tardivo', 'x_is_member': True})
+        order = self._order(late, [(self.product, 100.0)])
+        # Proposta dal corso (4), ridotta alle lezioni pattuite residue.
+        self.assertEqual(order.order_line.x_lesson_target, 4)
+        order.order_line.x_lesson_target = 1
+        order.action_confirm()
+
+        # Nessuna lezione erogata all'iscritto (quelle pre-iscrizione non
+        # contano): detrazione piena, rata 3 d'ordine azzerata (le rate 1-2
+        # restano dovute: credito oltre l'ordine perso, come da spec).
+        s = self._settlements(late)
+        self.assertEqual(s.target, 1)
+        self.assertEqual(s.lessons_held, 0)
+        self.assertEqual(s.missed_lessons, 1)
+        self.assertEqual(s.deduction, 100.0)
+        o = self.env['bandoo.order.settlement'].search(
+            [('order_id', '=', order.id)])
+        self.assertEqual(o.installment_3, 0.0)
+
+        # La lezione residua viene erogata (creata dopo la conferma, quindi
+        # include l'iscritto): nessuna detrazione, paga il concordato pieno.
+        self._timesheet(self._task('L5'))
+        s = self._settlements(late)
+        self.assertEqual(s.lessons_held, 1)
+        self.assertEqual(s.missed_lessons, 0)
+        self.assertEqual(s.deduction, 0.0)
+        self.assertEqual(s.installment_3, 34.0)  # 100 - 33 - 33
+
     def test_ordine_prezzo_zero(self):
         # Borsa di studio/scambio: ordine a prezzo zero, conguaglio a zero.
         student2 = self.env['res.partner'].create({

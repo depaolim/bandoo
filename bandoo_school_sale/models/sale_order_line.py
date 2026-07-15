@@ -13,6 +13,14 @@ class SaleOrderLine(models.Model):
         'project.project', string='Corso',
         compute='_compute_x_project_id', store=True,
     )
+    x_lesson_target = fields.Integer(
+        string='Lezioni previste', compute='_compute_x_lesson_target',
+        store=True, readonly=False,
+        help='Lezioni coperte da questa iscrizione: proposte dal corso, '
+             'da ridurre per le iscrizioni a metà anno (il conguaglio '
+             'detrae le lezioni non erogate all\'iscritto rispetto a '
+             'questo numero).',
+    )
 
     @api.depends('project_id', 'product_id')
     def _compute_x_project_id(self):
@@ -22,6 +30,18 @@ class SaleOrderLine(models.Model):
         for line in self:
             line.x_project_id = (
                 line.project_id or line.product_id.x_course_project_id
+            )
+
+    @api.depends('product_id')
+    def _compute_x_lesson_target(self):
+        """Proposta dal corso (collettivo: progetto condiviso; individuale:
+        template); resta modificabile per le iscrizioni a metà anno."""
+        for line in self:
+            product = line.product_id
+            line.x_lesson_target = (
+                product.x_course_project_id.x_lesson_target
+                or product.project_template_id.x_lesson_target
+                or 0
             )
 
     def _timesheet_create_project(self):

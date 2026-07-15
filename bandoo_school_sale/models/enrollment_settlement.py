@@ -15,8 +15,15 @@ class EnrollmentSettlement(models.Model):
     partner_id = fields.Many2one('res.partner', string='Studente', readonly=True)
     project_id = fields.Many2one('project.project', string='Corso', readonly=True)
     annual_price = fields.Float(string='Prezzo annuo (P)', readonly=True)
-    target = fields.Integer(string='Lezioni previste', readonly=True)
-    lessons_held = fields.Integer(string='Lezioni tenute', readonly=True)
+    target = fields.Integer(
+        string='Lezioni previste', readonly=True,
+        help='Dalla riga d\'ordine (proposte dal corso, ridotte per le '
+             'iscrizioni a metà anno).')
+    lessons_held = fields.Integer(
+        string='Lezioni erogate', readonly=True,
+        help='Lezioni svolte (con ore registrate) in cui l\'iscritto era in '
+             'elenco presenze: le lezioni tenute prima dell\'iscrizione non '
+             'contano.')
     justified_absences = fields.Integer(string='Assenze giustificate', readonly=True)
 
     # --- aritmetica in Python (non-stored, testabile a unità) ---
@@ -62,12 +69,16 @@ class EnrollmentSettlement(models.Model):
                 sol.x_student_id AS partner_id,
                 sol.x_project_id AS project_id,
                 sol.price_unit AS annual_price,
-                pp.x_lesson_target AS target,
+                sol.x_lesson_target AS target,
                 (SELECT count(*)
                    FROM project_task t
                   WHERE t.project_id = sol.x_project_id
                     AND EXISTS (SELECT 1 FROM account_analytic_line al
-                                 WHERE al.task_id = t.id)) AS lessons_held,
+                                 WHERE al.task_id = t.id)
+                    AND EXISTS (SELECT 1 FROM bandoo_lesson_student_line sl
+                                 WHERE sl.task_id = t.id
+                                   AND sl.partner_id = sol.x_student_id)
+                ) AS lessons_held,
                 (SELECT count(*)
                    FROM bandoo_lesson_student_line sl
                   WHERE sl.project_id = sol.x_project_id
