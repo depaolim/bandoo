@@ -52,5 +52,6 @@ class OrderSettlement(models.Model):
             JOIN sale_order so ON so.id = sol.order_id
             WHERE sol.x_student_id IS NOT NULL
               AND so.state = 'sale'
+              AND sol.product_uom_qty > 0
             GROUP BY so.id
         """)

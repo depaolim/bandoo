@@ -1,4 +1,5 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class SaleOrderLine(models.Model):
@@ -22,3 +23,28 @@ class SaleOrderLine(models.Model):
             line.x_project_id = (
                 line.project_id or line.product_id.x_course_project_id
             )
+
+    def _timesheet_create_project(self):
+        project = super()._timesheet_create_project()
+        if self.product_id.x_is_course and self.x_student_id:
+            # Nome operativo al posto dello standard "S00042 - <template>".
+            project.name = '%s - %s' % (
+                self.product_id.name, self.x_student_id.name)
+        return project
+
+    @api.constrains('product_id', 'x_student_id')
+    def _check_course_enrollment(self):
+        """Riga con prodotto-corso: studente obbligatorio e socio, validato
+        al salvataggio in qualunque stato (niente bozze incomplete: copre
+        anche le righe aggiunte a ordini già confermati)."""
+        for line in self:
+            if not line.product_id.x_is_course:
+                continue
+            if not line.x_student_id:
+                raise ValidationError(_(
+                    'Riga "%s": indicare lo studente da iscrivere.',
+                    line.product_id.display_name))
+            if not line.x_student_id.x_is_member:
+                raise ValidationError(_(
+                    'Lo studente %s deve essere socio per iscriversi.',
+                    line.x_student_id.display_name))

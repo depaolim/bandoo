@@ -80,4 +80,5 @@ class EnrollmentSettlement(models.Model):
             JOIN project_project pp ON pp.id = sol.x_project_id
             WHERE sol.x_student_id IS NOT NULL
               AND so.state = 'sale'
+              AND sol.product_uom_qty > 0
         """)

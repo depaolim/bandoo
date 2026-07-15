@@ -13,12 +13,18 @@ class ProjectProject(models.Model):
         'res.partner', string='Studenti iscritti',
         compute='_compute_enrolled_student_ids',
         depends=['x_enrollment_line_ids.state',
-                 'x_enrollment_line_ids.x_student_id'],
+                 'x_enrollment_line_ids.x_student_id',
+                 'x_enrollment_line_ids.product_uom_qty'],
     )
 
     def _get_enrolled_students(self):
-        """Iscritti = studenti delle righe d'ordine confermate del corso."""
+        """Iscritti = studenti delle righe d'ordine confermate del corso.
+
+        Quantità 0 = riga annullata (convenzione Odoo sugli ordini
+        confermati): non iscrive.
+        """
         self.ensure_one()
         lines = self.x_enrollment_line_ids.filtered(
-            lambda l: l.state == 'sale' and l.x_student_id)
+            lambda l: l.state == 'sale' and l.x_student_id
+            and l.product_uom_qty > 0)
         return super()._get_enrolled_students() | lines.x_student_id
