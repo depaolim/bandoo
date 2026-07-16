@@ -495,6 +495,10 @@ class TestIndividualCourse(BandooCase):
         self.assertEqual(project.x_lesson_target, 4)
         self.assertFalse(project.tasks)
         self.assertEqual(project.name, 'Lezioni Pianoforte - Allievo')
+        # Il nome è coerente in tutte le lingue (campo traducibile).
+        self.assertEqual(
+            project.with_context(lang='it_IT').name,
+            'Lezioni Pianoforte - Allievo')
 
         # Elenco iscritti derivato: il solo studente dell'ordine.
         self.assertEqual(project.enrolled_student_ids, self.student)

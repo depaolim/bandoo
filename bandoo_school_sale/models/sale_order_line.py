@@ -48,8 +48,13 @@ class SaleOrderLine(models.Model):
         project = super()._timesheet_create_project()
         if self.product_id.x_is_course and self.x_student_id:
             # Nome operativo al posto dello standard "S00042 - <template>".
-            project.name = '%s - %s' % (
-                self.product_id.name, self.x_student_id.name)
+            # Il nome progetto è traducibile e la copia del template porta le
+            # traduzioni: va riscritto in ogni lingua installata, non solo in
+            # quella della sessione.
+            for lang, _lang_name in self.env['res.lang'].get_installed():
+                project.with_context(lang=lang).name = '%s - %s' % (
+                    self.product_id.with_context(lang=lang).name,
+                    self.x_student_id.name)
         return project
 
     @api.constrains('product_id', 'x_student_id')
