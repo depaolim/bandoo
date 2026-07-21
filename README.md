@@ -1,47 +1,48 @@
-# Bandoo addons
+# Addon Bandoo
 
-Odoo 18 addons for the Bandoo project — a music school running on top of
-Odoo's Project, Timesheet and Sales apps.
+Addon Odoo 18 per il progetto Bandoo — una scuola di musica costruita sopra
+le app Progetto, Foglio ore e Vendite di Odoo.
 
-Three modules, layered by dependency:
+Tre moduli, stratificati per dipendenza:
 
 ## bandoo_school
 
-Core domain: courses, lessons, attendance.
+Dominio principale: corsi, lezioni, presenze.
 
-- Courses are `project.project` records; lessons are `project.task` records
-  (with an `Aula` / room, a teacher, and a "held" flag).
-- `bandoo.room` — physical rooms.
-- `bandoo.lesson.student.line` — per-student attendance on each lesson, with
-  a status (present / justified / unjustified) and a computed billing status.
-- `bandoo.lesson.attendance` — read-only SQL view aggregating attendance for
-  reporting.
-- `bandoo.lesson.generate` wizard — bulk-generates recurring lessons for a
-  course (start date, time, count, weekly interval).
+- I corsi sono record `project.project`; le lezioni sono record `project.task`
+  (con aula, insegnante e un flag "svolta").
+- `bandoo.room` — le aule fisiche.
+- `bandoo.lesson.student.line` — presenza del singolo studente su ogni lezione,
+  con uno stato (presente / giustificato / ingiustificato) e uno stato di
+  fatturazione calcolato.
+- `bandoo.lesson.attendance` — vista SQL in sola lettura che aggrega le presenze
+  per la reportistica.
+- Procedura guidata `bandoo.lesson.generate` — genera in blocco le lezioni
+  ricorrenti di un corso (data di inizio, orario, numero, intervallo settimanale).
 
-Depends on: `project`, `hr_timesheet`, `contacts`.
+Dipende da: `project`, `hr_timesheet`, `contacts`.
 
 ## bandoo_school_sale
 
-Sales layer on top of `bandoo_school`: enrollments, fees and settlement.
+Strato vendite sopra `bandoo_school`: iscrizioni, rette e conguaglio.
 
-- A `product.template` can be flagged as a course and linked to a course
-  project; a `sale.order.line` then carries the enrolled student and target
-  number of lessons.
-- `bandoo.enrollment.settlement` — per-enrollment settlement: yearly price,
-  lessons held, justified absences, price per lesson, deduction and the three
-  installments.
-- `bandoo.order.settlement` — per-order settlement, aggregating the lines.
-- `res.partner` gains a `Socio` (member) flag.
+- Un `product.template` può essere marcato come corso e collegato a un progetto
+  corso; una `sale.order.line` porta allora lo studente iscritto e il numero di
+  lezioni previste.
+- `bandoo.enrollment.settlement` — conguaglio per iscrizione: prezzo annuo,
+  lezioni svolte, assenze giustificate, prezzo per lezione, detrazione e le tre
+  rate.
+- `bandoo.order.settlement` — conguaglio per ordine, aggrega le righe.
+- `res.partner` acquisisce il flag `Socio`.
 
-Depends on: `bandoo_school`, `sale_management`, `sale_project`.
+Dipende da: `bandoo_school`, `sale_management`, `sale_project`.
 
 ## bandoo_branding
 
-Login-page branding and the meta-module that pins the full list of modules
-to install for a Bandoo instance.
+Branding della pagina di login e meta-modulo che fissa l'elenco completo dei
+moduli da installare per un'istanza Bandoo.
 
-- Custom logo and login templates.
-- Its `depends` list is the effective install manifest for the deployment
-  (HR, attendance, timesheets, portal, spreadsheet dashboards, TOTP, …),
-  including `bandoo_school` and `bandoo_school_sale`.
+- Logo personalizzato e template di login.
+- Il suo elenco `depends` è di fatto il manifest d'installazione del deployment
+  (HR, presenze, fogli ore, portale, dashboard spreadsheet, TOTP, …), inclusi
+  `bandoo_school` e `bandoo_school_sale`.
