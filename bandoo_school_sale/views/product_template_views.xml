@@ -8,9 +8,8 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='sales']" position="inside">
                 <group name="bandoo_course" string="Corso">
-                    <field name="x_is_course"/>
                     <field name="x_course_project_id"
-                           invisible="not x_is_course or service_tracking != 'no'"/>
+                           invisible="service_tracking != 'course_collective'"/>
                 </group>
             </xpath>
         </field>

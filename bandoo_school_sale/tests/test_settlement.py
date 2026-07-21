@@ -83,7 +83,7 @@ class BandooCase(TransactionCase):
         """Prodotto-corso collettivo: prezzo sul prodotto, progetto condiviso."""
         return self.env['product.product'].create({
             'name': name, 'type': 'service', 'list_price': price,
-            'x_is_course': True, 'service_tracking': 'no',
+            'service_tracking': 'course_collective',
             'x_course_project_id': project.id,
         })
 
@@ -432,7 +432,7 @@ class TestEnrollmentFlow(BandooCase):
         with self.assertRaises(ValidationError), self.cr.savepoint():
             self.env['product.product'].create({
                 'name': 'Corso rotto', 'type': 'service',
-                'x_is_course': True,  # né progetto condiviso né template
+                'service_tracking': 'course_collective',  # senza progetto
             })
 
 
@@ -475,8 +475,7 @@ class TestIndividualCourse(BandooCase):
         })
         self.piano = self.env['product.product'].create({
             'name': 'Lezioni Pianoforte', 'type': 'service',
-            'list_price': 400.0, 'x_is_course': True,
-            'service_tracking': 'project_only',
+            'list_price': 400.0, 'service_tracking': 'project_only',
             'project_template_id': self.template.id,
         })
 
