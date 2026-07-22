@@ -10,7 +10,6 @@ class OrderSettlement(models.Model):
 
     # --- grezzi dalla view SQL (una riga per ordine con righe d'iscrizione) ---
     order_id = fields.Many2one('sale.order', string='Ordine', readonly=True)
-    payer_id = fields.Many2one('res.partner', string='Pagatore', readonly=True)
     total_price = fields.Float(string='Totale ordine', readonly=True)
 
     # --- aritmetica in Python: le rate si calcolano sul totale ordine ---
@@ -46,11 +45,10 @@ class OrderSettlement(models.Model):
             SELECT
                 so.id AS id,
                 so.id AS order_id,
-                so.partner_id AS payer_id,
                 SUM(sol.price_unit) AS total_price
             FROM sale_order_line sol
             JOIN sale_order so ON so.id = sol.order_id
-            WHERE sol.x_student_id IS NOT NULL
+            WHERE sol.x_project_id IS NOT NULL
               AND so.state = 'sale'
               AND sol.product_uom_qty > 0
             GROUP BY so.id

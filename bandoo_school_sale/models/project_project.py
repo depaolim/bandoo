@@ -13,7 +13,7 @@ class ProjectProject(models.Model):
         'res.partner', string='Studenti iscritti',
         compute='_compute_enrolled_student_ids',
         depends=['x_enrollment_line_ids.state',
-                 'x_enrollment_line_ids.x_student_id',
+                 'x_enrollment_line_ids.order_id.partner_id',
                  'x_enrollment_line_ids.product_uom_qty'],
     )
 
@@ -25,6 +25,5 @@ class ProjectProject(models.Model):
         """
         self.ensure_one()
         lines = self.x_enrollment_line_ids.filtered(
-            lambda l: l.state == 'sale' and l.x_student_id
-            and l.product_uom_qty > 0)
-        return super()._get_enrolled_students() | lines.x_student_id
+            lambda l: l.state == 'sale' and l.product_uom_qty > 0)
+        return super()._get_enrolled_students() | lines.order_id.partner_id

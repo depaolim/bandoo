@@ -11,7 +11,6 @@ class EnrollmentSettlement(models.Model):
     # --- grezzi dalla view SQL (una riga per riga d'ordine confermata) ---
     order_line_id = fields.Many2one('sale.order.line', string='Riga ordine', readonly=True)
     order_id = fields.Many2one('sale.order', string='Ordine', readonly=True)
-    payer_id = fields.Many2one('res.partner', string='Pagatore', readonly=True)
     partner_id = fields.Many2one('res.partner', string='Studente', readonly=True)
     project_id = fields.Many2one('project.project', string='Corso', readonly=True)
     annual_price = fields.Float(string='Prezzo annuo (P)', readonly=True)
@@ -65,8 +64,7 @@ class EnrollmentSettlement(models.Model):
                 sol.id AS id,
                 sol.id AS order_line_id,
                 sol.order_id AS order_id,
-                so.partner_id AS payer_id,
-                sol.x_student_id AS partner_id,
+                so.partner_id AS partner_id,
                 sol.x_project_id AS project_id,
                 sol.price_unit AS annual_price,
                 sol.x_lesson_target AS target,
@@ -77,19 +75,19 @@ class EnrollmentSettlement(models.Model):
                                  WHERE al.task_id = t.id)
                     AND EXISTS (SELECT 1 FROM bandoo_lesson_student_line sl
                                  WHERE sl.task_id = t.id
-                                   AND sl.partner_id = sol.x_student_id)
+                                   AND sl.partner_id = so.partner_id)
                 ) AS lessons_held,
                 (SELECT count(*)
                    FROM bandoo_lesson_student_line sl
                   WHERE sl.project_id = sol.x_project_id
-                    AND sl.partner_id = sol.x_student_id
+                    AND sl.partner_id = so.partner_id
                     AND sl.status = 'absent_justified'
                     AND EXISTS (SELECT 1 FROM account_analytic_line al
                                  WHERE al.task_id = sl.task_id)) AS justified_absences
             FROM sale_order_line sol
             JOIN sale_order so ON so.id = sol.order_id
             JOIN project_project pp ON pp.id = sol.x_project_id
-            WHERE sol.x_student_id IS NOT NULL
+            WHERE sol.x_project_id IS NOT NULL
               AND so.state = 'sale'
               AND sol.product_uom_qty > 0
         """)

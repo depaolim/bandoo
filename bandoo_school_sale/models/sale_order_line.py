@@ -1,14 +1,9 @@
-from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo import api, fields, models
 
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    x_student_id = fields.Many2one(
-        'res.partner', string='Studente',
-        domain=[('is_company', '=', False)],
-    )
     x_project_id = fields.Many2one(
         'project.project', string='Corso',
         compute='_compute_x_project_id', store=True,
@@ -46,7 +41,7 @@ class SaleOrderLine(models.Model):
 
     def _timesheet_create_project(self):
         project = super()._timesheet_create_project()
-        if self.product_id.x_is_course and self.x_student_id:
+        if self.product_id.x_is_course and self.order_id.partner_id:
             # Nome operativo al posto dello standard "S00042 - <template>".
             # Il nome progetto è traducibile e la copia del template porta le
             # traduzioni: va riscritto in ogni lingua installata, non solo in
@@ -54,22 +49,5 @@ class SaleOrderLine(models.Model):
             for lang, _lang_name in self.env['res.lang'].get_installed():
                 project.with_context(lang=lang).name = '%s - %s' % (
                     self.product_id.with_context(lang=lang).name,
-                    self.x_student_id.name)
+                    self.order_id.partner_id.name)
         return project
-
-    @api.constrains('product_id', 'x_student_id')
-    def _check_course_enrollment(self):
-        """Riga con prodotto-corso: studente obbligatorio e socio, validato
-        al salvataggio in qualunque stato (niente bozze incomplete: copre
-        anche le righe aggiunte a ordini già confermati)."""
-        for line in self:
-            if not line.product_id.x_is_course:
-                continue
-            if not line.x_student_id:
-                raise ValidationError(_(
-                    'Riga "%s": indicare lo studente da iscrivere.',
-                    line.product_id.display_name))
-            if not line.x_student_id.x_is_member:
-                raise ValidationError(_(
-                    'Lo studente %s deve essere socio per iscriversi.',
-                    line.x_student_id.display_name))

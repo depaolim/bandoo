@@ -70,10 +70,10 @@ class BandooCase(TransactionCase):
             'name': 'Chitarra', 'x_lesson_target': 4,
         })
         self.product = self._course_product('Corso Chitarra', self.course, 400.0)
-        self.guardian = self.env['res.partner'].create({'name': 'Genitore'})
-        self.student = self.env['res.partner'].create({
-            'name': 'Allievo', 'x_is_member': True,
-            'parent_id': self.guardian.id,
+        self.student = self.env['res.partner'].create({'name': 'Allievo'})
+        # Il genitore è un contatto associato dentro la scheda dello studente.
+        self.guardian = self.env['res.partner'].create({
+            'name': 'Genitore', 'parent_id': self.student.id,
         })
         self.employee = self.env['hr.employee'].create({'name': 'Maestro'})
         self.order = self._order(self.student, [(self.product, 400.0)])
@@ -88,11 +88,11 @@ class BandooCase(TransactionCase):
         })
 
     def _order(self, student, product_prices):
-        """Iscrizione = ordine standard: cliente pagatore, studente su riga."""
+        """Iscrizione = ordine standard: lo studente è l'intestatario."""
         return self.env['sale.order'].create({
-            'partner_id': self.guardian.id,
+            'partner_id': student.id,
             'order_line': [
-                (0, 0, {'product_id': product.id, 'x_student_id': student.id,
+                (0, 0, {'product_id': product.id,
                         'price_unit': price, 'product_uom_qty': 1.0})
                 for product, price in product_prices
             ],
@@ -174,7 +174,7 @@ class TestSettlementIntegration(BandooCase):
         })
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         student = self.env['res.partner'].create({
-            'name': 'Allievo2', 'x_is_member': True,
+            'name': 'Allievo2',
         })
         order = self._order(student, [
             (self.product, 400.0), (solfeggio_product, 120.0),
@@ -211,7 +211,7 @@ class TestSettlementIntegration(BandooCase):
     def test_ordini_distinti_non_si_compensano(self):
         # Il credito di un ordine non abbatte la rata 3 di un altro ordine.
         student2 = self.env['res.partner'].create({
-            'name': 'Allievo2', 'x_is_member': True,
+            'name': 'Allievo2',
         })
         order2 = self._order(student2, [(self.product, 400.0)])
         order2.action_confirm()
@@ -273,7 +273,7 @@ class TestSettlementIntegration(BandooCase):
         for n in range(4):
             self._timesheet(self._task(f'L{n}'))
         late = self.env['res.partner'].create({
-            'name': 'Tardivo', 'x_is_member': True})
+            'name': 'Tardivo'})
         order = self._order(late, [(self.product, 100.0)])
         # Proposta dal corso (4), ridotta alle lezioni pattuite residue.
         self.assertEqual(order.order_line.x_lesson_target, 4)
@@ -304,7 +304,7 @@ class TestSettlementIntegration(BandooCase):
     def test_ordine_prezzo_zero(self):
         # Borsa di studio/scambio: ordine a prezzo zero, conguaglio a zero.
         student2 = self.env['res.partner'].create({
-            'name': 'Borsista', 'x_is_member': True,
+            'name': 'Borsista',
         })
         order = self._order(student2, [(self.product, 0.0)])
         order.action_confirm()
@@ -319,85 +319,60 @@ class TestSettlementIntegration(BandooCase):
 class TestEnrollmentFlow(BandooCase):
     """Iscrizione come ordine standard: validazioni ed elenco iscritti."""
 
-    def test_salvataggio_senza_studente_bloccato(self):
-        # La validazione scatta al salvataggio della riga, in qualunque
-        # stato: niente bozze incomplete (deciso 2026-07-10).
-        with self.assertRaises(ValidationError), self.cr.savepoint():
-            self.env['sale.order'].create({
-                'partner_id': self.guardian.id,
-                'order_line': [(0, 0, {
-                    'product_id': self.product.id, 'price_unit': 400.0,
-                    'product_uom_qty': 1.0,
-                })],
-            })
-
-    def test_salvataggio_non_socio_bloccato(self):
-        outsider = self.env['res.partner'].create({'name': 'NonSocio'})
-        with self.assertRaises(ValidationError), self.cr.savepoint():
-            self._order(outsider, [(self.product, 400.0)])
-
     def test_prodotto_non_corso_senza_vincoli(self):
         fee = self.env['product.product'].create({
             'name': 'Quota associativa', 'type': 'service', 'list_price': 30.0,
         })
         order = self.env['sale.order'].create({
-            'partner_id': self.guardian.id,
+            'partner_id': self.student.id,
             'order_line': [(0, 0, {
                 'product_id': fee.id, 'price_unit': 30.0,
                 'product_uom_qty': 1.0,
             })],
         })
-        order.action_confirm()  # nessuno studente richiesto
+        order.action_confirm()  # non è un corso: nessun progetto agganciato
         self.assertFalse(order.order_line.x_project_id)
 
-    def test_riga_aggiunta_a_ordine_confermato_validata(self):
+    def test_riga_aggiunta_a_ordine_confermato_iscrive(self):
         # Le righe aggiunte a un ordine già confermato nascono in stato
-        # 'sale' senza passare da action_confirm: la validazione deve
-        # scattare comunque (buco emerso dal test manuale 2026-07-10).
-        with self.assertRaises(ValidationError), self.cr.savepoint():
-            self.order.write({'order_line': [(0, 0, {
-                'product_id': self.product.id, 'price_unit': 100.0,
-                'product_uom_qty': 1.0,
-            })]})
-        outsider = self.env['res.partner'].create({'name': 'NonSocio2'})
-        with self.assertRaises(ValidationError), self.cr.savepoint():
-            self.order.write({'order_line': [(0, 0, {
-                'product_id': self.product.id, 'x_student_id': outsider.id,
-                'price_unit': 100.0, 'product_uom_qty': 1.0,
-            })]})
-        # Con studente socio l'aggiunta resta legittima (corso a metà anno).
-        member = self.env['res.partner'].create({
-            'name': 'Socio2', 'x_is_member': True})
+        # 'sale' senza passare da action_confirm: l'iscrizione dell'intestatario
+        # al nuovo corso deve scattare comunque (buco emerso dal test manuale
+        # 2026-07-10). Un ordine = un allievo, più corsi.
+        solfeggio = self.env['project.project'].create({
+            'name': 'Solfeggio', 'x_lesson_target': 4})
+        solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         self.order.write({'order_line': [(0, 0, {
-            'product_id': self.product.id, 'x_student_id': member.id,
-            'price_unit': 100.0, 'product_uom_qty': 1.0,
+            'product_id': solfeggio_product.id,
+            'price_unit': 120.0, 'product_uom_qty': 1.0,
         })]})
-        self.assertIn(member, self.course.enrolled_student_ids)
+        self.assertIn(self.student, solfeggio.enrolled_student_ids)
 
     def test_riga_azzerata_non_iscrive(self):
         # Su ordine confermato le righe non si eliminano: la convenzione
         # Odoo è quantità 0. La riga azzerata non deve iscrivere né contare
         # nei conguagli (buco emerso dal test manuale 2026-07-10).
-        member = self.env['res.partner'].create({
-            'name': 'Ripensato', 'x_is_member': True})
+        solfeggio = self.env['project.project'].create({
+            'name': 'Solfeggio', 'x_lesson_target': 4})
+        solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         self.order.write({'order_line': [(0, 0, {
-            'product_id': self.product.id, 'x_student_id': member.id,
-            'price_unit': 400.0, 'product_uom_qty': 1.0,
+            'product_id': solfeggio_product.id,
+            'price_unit': 120.0, 'product_uom_qty': 1.0,
         })]})
-        self.assertIn(member, self.course.enrolled_student_ids)
+        self.assertIn(self.student, solfeggio.enrolled_student_ids)
 
         line = self.order.order_line.filtered(
-            lambda l: l.x_student_id == member)
+            lambda l: l.x_project_id == solfeggio)
         line.product_uom_qty = 0.0
-        self.assertNotIn(member, self.course.enrolled_student_ids)
-        self.assertFalse(self._settlements(member))
+        self.assertNotIn(self.student, solfeggio.enrolled_student_ids)
+        self.assertFalse(self._settlements(self.student).filtered(
+            lambda s: s.project_id == solfeggio))
         order_settlement = self.env['bandoo.order.settlement'].search(
             [('order_id', '=', self.order.id)])
-        self.assertEqual(order_settlement.total_price, 400.0)  # solo Allievo
+        self.assertEqual(order_settlement.total_price, 400.0)  # solo Chitarra
 
     def test_annullamento_esclude_da_lezioni_successive(self):
         student2 = self.env['res.partner'].create({
-            'name': 'Allievo2', 'x_is_member': True,
+            'name': 'Allievo2',
         })
         order2 = self._order(student2, [(self.product, 400.0)])
         order2.action_confirm()
@@ -414,7 +389,7 @@ class TestEnrollmentFlow(BandooCase):
         self._timesheet(t_svolta)
         # Iscrizione a metà anno: le lezioni esistenti non hanno lo studente.
         student2 = self.env['res.partner'].create({
-            'name': 'Tardivo', 'x_is_member': True,
+            'name': 'Tardivo',
         })
         self._order(student2, [(self.product, 200.0)]).action_confirm()
         self.assertNotIn(student2, t_futura.attendance_line_ids.partner_id)

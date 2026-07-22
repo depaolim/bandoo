@@ -8,7 +8,6 @@
             <list create="false" edit="false">
                 <field name="partner_id"/>
                 <field name="project_id"/>
-                <field name="payer_id" optional="show"/>
                 <field name="order_id" optional="hide"/>
                 <field name="annual_price" sum="Totale"/>
                 <field name="target"/>
@@ -34,7 +33,6 @@
                         <group string="Iscrizione">
                             <field name="partner_id"/>
                             <field name="project_id"/>
-                            <field name="payer_id"/>
                             <field name="order_id"/>
                             <field name="annual_price"/>
                         </group>
@@ -64,12 +62,9 @@
             <search>
                 <field name="partner_id"/>
                 <field name="project_id"/>
-                <field name="payer_id"/>
                 <group expand="0" string="Raggruppa per">
                     <filter name="group_project" string="Corso"
                             context="{'group_by': 'project_id'}"/>
-                    <filter name="group_payer" string="Pagatore"
-                            context="{'group_by': 'payer_id'}"/>
                     <filter name="group_order" string="Ordine"
                             context="{'group_by': 'order_id'}"/>
                 </group>
@@ -96,7 +91,6 @@
         <field name="arch" type="xml">
             <list create="false" edit="false">
                 <field name="order_id"/>
-                <field name="payer_id"/>
                 <field name="total_price" sum="Totale"/>
                 <field name="deduction" sum="Totale"/>
                 <field name="installment_1" sum="Totale"/>
@@ -115,7 +109,6 @@
                     <group>
                         <group string="Ordine">
                             <field name="order_id"/>
-                            <field name="payer_id"/>
                             <field name="total_price"/>
                             <field name="deduction"/>
                         </group>
