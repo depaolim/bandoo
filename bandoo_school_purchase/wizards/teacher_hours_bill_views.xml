@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="bandoo_teacher_hours_bill_form" model="ir.ui.view">
+        <field name="name">bandoo.teacher.hours.bill.form</field>
+        <field name="model">bandoo.teacher.hours.bill</field>
+        <field name="arch" type="xml">
+            <form string="Compenso ore insegnante">
+                <group>
+                    <field name="employee_id"/>
+                    <field name="project_id"/>
+                </group>
+                <footer>
+                    <button name="action_create_order" type="object"
+                            string="Crea ordine" class="btn-primary"/>
+                    <button string="Annulla" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="bandoo_teacher_hours_bill_action" model="ir.actions.act_window">
+        <field name="name">Compenso ore insegnante</field>
+        <field name="res_model">bandoo.teacher.hours.bill</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_bandoo_teacher_hours_bill"
+        name="Compenso ore insegnante"
+        parent="purchase.menu_purchase_root"
+        action="bandoo_teacher_hours_bill_action"
+        sequence="90"/>
+
+</odoo>

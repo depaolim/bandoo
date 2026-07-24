@@ -6,6 +6,7 @@
     'depends': [
         'bandoo_school',
         'bandoo_school_sale',
+        'bandoo_school_purchase',
         'analytic',
         'auth_signup',
         'auth_totp',
@@ -36,6 +37,7 @@
         'project_hr_skills',
         'project_task_default_stage',
         'project_todo',
+        'purchase',
         'rating',
         'resource',
         'resource_mail',
