@@ -444,6 +444,10 @@ class TestIndividualCourse(BandooCase):
 
     def setUp(self):
         super().setUp()
+        # Attivata esplicitamente: il test confronta il nome anche in it_IT,
+        # e su un database appena creato quella lingua non esiste. Senza
+        # questa riga il test passa solo dove l'italiano è già installato.
+        self.env['res.lang']._activate_lang('it_IT')
         self.template = self.env['project.project'].create({
             'name': 'Template Pianoforte', 'x_lesson_target': 4,
             'active': False,
