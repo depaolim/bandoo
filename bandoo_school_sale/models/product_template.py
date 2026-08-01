@@ -6,11 +6,14 @@ class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
     service_tracking = fields.Selection(
-        selection_add=[('course_collective', 'Corso collettivo')],
+        # L'etichetta nomina l'oggetto che si andrà a indicare, come le altre
+        # voci della tendina. Il valore tecnico resta 'course_collective':
+        # cambiarlo romperebbe i dati esistenti e i test.
+        selection_add=[('course_collective', 'Progetto condiviso')],
         ondelete={'course_collective': 'set default'},
     )
     x_course_project_id = fields.Many2one(
-        'project.project', string='Progetto condiviso (corso collettivo)',
+        'project.project', string='Progetto condiviso',
         help='Corso collettivo: progetto comune a cui si agganciano le '
              'iscrizioni. Per i corsi individuali usare invece '
              '"Progetto" come tracciamento con un template di progetto.',

@@ -4,13 +4,24 @@
     <record id="product_template_form_bandoo_sale" model="ir.ui.view">
         <field name="name">product.template.form.bandoo.sale</field>
         <field name="model">product.template</field>
-        <field name="inherit_id" ref="sale.product_template_form_view"/>
+        <!-- Inherits the sale_project view and not sale's own: the field goes
+             next to project_template_id, which sale_project adds. -->
+        <field name="inherit_id"
+               ref="sale_project.product_template_form_view_invoice_policy_inherit_sale_project"/>
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='sales']" position="inside">
-                <group name="bandoo_course" string="Corso">
-                    <field name="x_course_project_id"
-                           invisible="service_tracking != 'course_collective'"/>
-                </group>
+            <!-- Beside the selection that enables it, in "General Information",
+                 exactly like project_template_id for the individual case. It
+                 used to live in the "Sales" tab, where nobody could guess it
+                 was: configuring a collective course meant changing tab.
+                 Same markup as Odoo uses for its own conditional fields. -->
+            <xpath expr="//field[@name='project_template_id']" position="after">
+                <div class="o_td_label d-inline-flex"
+                     invisible="service_tracking != 'course_collective'">
+                    <label for="x_course_project_id"/>
+                </div>
+                <field name="x_course_project_id"
+                       invisible="service_tracking != 'course_collective'"
+                       nolabel="1"/>
             </xpath>
         </field>
     </record>
