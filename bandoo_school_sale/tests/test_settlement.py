@@ -70,14 +70,23 @@ class BandooCase(TransactionCase):
             'name': 'Chitarra', 'x_lesson_target': 4,
         })
         self.product = self._course_product('Corso Chitarra', self.course, 400.0)
-        self.student = self.env['res.partner'].create({'name': 'Allievo'})
+        self.student = self._partner('Allievo')
         # Il genitore è un contatto associato dentro la scheda dello studente.
-        self.guardian = self.env['res.partner'].create({
-            'name': 'Genitore', 'parent_id': self.student.id,
+        self.guardian = self._partner('Genitore', parent_id=self.student.id)
+        # hr_employee_firstname (D-22): cognome e nome sull'impiegato, che li
+        # propaga sul work contact creato da hr. Niente `name`, niente split.
+        self.employee = self.env['hr.employee'].create({
+            'lastname': 'Maestro', 'firstname': 'Test',
         })
-        self.employee = self.env['hr.employee'].create({'name': 'Maestro'})
         self.order = self._order(self.student, [(self.product, 400.0)])
         self.order.action_confirm()
+
+    def _partner(self, lastname, firstname='Test', **vals):
+        # partner_firstname impone cognome E nome (D-21): si passano espliciti,
+        # non si lascia dedurre lo split da `name`, che con l'ordine
+        # `last_first` leggerebbe la prima parola come cognome.
+        return self.env['res.partner'].create(
+            {'lastname': lastname, 'firstname': firstname, **vals})
 
     def _course_product(self, name, project, price):
         """Prodotto-corso collettivo: prezzo sul prodotto, progetto condiviso."""
@@ -173,9 +182,7 @@ class TestSettlementIntegration(BandooCase):
             'name': 'Solfeggio', 'x_lesson_target': 4,
         })
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
-        student = self.env['res.partner'].create({
-            'name': 'Allievo2',
-        })
+        student = self._partner('Allievo2')
         order = self._order(student, [
             (self.product, 400.0), (solfeggio_product, 120.0),
         ])
@@ -210,9 +217,7 @@ class TestSettlementIntegration(BandooCase):
 
     def test_ordini_distinti_non_si_compensano(self):
         # Il credito di un ordine non abbatte la rata 3 di un altro ordine.
-        student2 = self.env['res.partner'].create({
-            'name': 'Allievo2',
-        })
+        student2 = self._partner('Allievo2')
         order2 = self._order(student2, [(self.product, 400.0)])
         order2.action_confirm()
         # 4 lezioni tenute: self.student con 2 giustificate (credito 66),
@@ -272,8 +277,7 @@ class TestSettlementIntegration(BandooCase):
         # 4 lezioni tutte svolte PRIMA dell'iscrizione tardiva.
         for n in range(4):
             self._timesheet(self._task(f'L{n}'))
-        late = self.env['res.partner'].create({
-            'name': 'Tardivo'})
+        late = self._partner('Tardivo')
         order = self._order(late, [(self.product, 100.0)])
         # Proposta dal corso (4), ridotta alle lezioni pattuite residue.
         self.assertEqual(order.order_line.x_lesson_target, 4)
@@ -303,9 +307,7 @@ class TestSettlementIntegration(BandooCase):
 
     def test_ordine_prezzo_zero(self):
         # Borsa di studio/scambio: ordine a prezzo zero, conguaglio a zero.
-        student2 = self.env['res.partner'].create({
-            'name': 'Borsista',
-        })
+        student2 = self._partner('Borsista')
         order = self._order(student2, [(self.product, 0.0)])
         order.action_confirm()
         self.assertIn(student2, self.course.enrolled_student_ids)
@@ -371,9 +373,7 @@ class TestEnrollmentFlow(BandooCase):
         self.assertEqual(order_settlement.total_price, 400.0)  # solo Chitarra
 
     def test_annullamento_esclude_da_lezioni_successive(self):
-        student2 = self.env['res.partner'].create({
-            'name': 'Allievo2',
-        })
+        student2 = self._partner('Allievo2')
         order2 = self._order(student2, [(self.product, 400.0)])
         order2.action_confirm()
         self.assertIn(student2, self.course.enrolled_student_ids)
@@ -388,9 +388,7 @@ class TestEnrollmentFlow(BandooCase):
         t_svolta, t_futura = self._task('L1'), self._task('L2')
         self._timesheet(t_svolta)
         # Iscrizione a metà anno: le lezioni esistenti non hanno lo studente.
-        student2 = self.env['res.partner'].create({
-            'name': 'Tardivo',
-        })
+        student2 = self._partner('Tardivo')
         self._order(student2, [(self.product, 200.0)]).action_confirm()
         self.assertNotIn(student2, t_futura.attendance_line_ids.partner_id)
 
@@ -472,11 +470,14 @@ class TestIndividualCourse(BandooCase):
         self.assertTrue(project.active)
         self.assertEqual(project.x_lesson_target, 4)
         self.assertFalse(project.tasks)
-        self.assertEqual(project.name, 'Lezioni Pianoforte - Allievo')
+        # `Allievo Test` è `res.partner.name` ricomposto da partner_firstname
+        # nell'ordine `Cognome Nome` deciso in D-21: il letterale vale anche da
+        # sentinella se quell'ordine cambiasse.
+        self.assertEqual(project.name, 'Lezioni Pianoforte - Allievo Test')
         # Il nome è coerente in tutte le lingue (campo traducibile).
         self.assertEqual(
             project.with_context(lang='it_IT').name,
-            'Lezioni Pianoforte - Allievo')
+            'Lezioni Pianoforte - Allievo Test')
 
         # Elenco iscritti derivato: il solo studente dell'ordine.
         self.assertEqual(project.enrolled_student_ids, self.student)

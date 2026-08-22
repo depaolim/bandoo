@@ -5,11 +5,14 @@
     'category': 'Project',
     'depends': [
         'contacts',
+        'hr_employee_firstname',
         'hr_timesheet',
+        'partner_firstname',
         'project',
     ],
     'data': [
         'security/ir.model.access.csv',
+        'data/names_config.xml',
         'views/bandoo_room_views.xml',
         'views/project_project_views.xml',
         'views/project_task_views.xml',

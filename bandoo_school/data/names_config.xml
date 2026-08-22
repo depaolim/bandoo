@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Configurazione dei nomi separati (OCA), decisa in D-21 e D-22.
+
+  Nessuno dei tre valori è il default: `_partner_names_order_default()` e
+  `_employee_names_order_default()` ritornano entrambi `first_last`, e
+  `partner_firstname/data/ir_config_parameter.xml` imposta `required_fields` a
+  `no`. Senza questo file un database appena creato nasce con la configurazione
+  opposta a quella voluta.
+
+  `employee_names_order` è una chiave distinta da `partner_names_order`:
+  hr_employee_firstname ha una propria configurazione e non legge quella dei
+  partner. Vanno tenute allineate, altrimenti la scheda impiegato mostra
+  `Nome Cognome` e la scheda contatto `Cognome Nome`.
+
+  `noupdate="1"`: si applica all'installazione e mai più. Un aggiornamento dei
+  moduli non deve ribaltare un cambio fatto di proposito da Settings — per
+  l'ordine, in particolare, tornare indietro obbligherebbe a ripassare dal
+  bottone "Recalculate names" su tutta l'anagrafica.
+
+  Impostati con `set_param` e non con due `<record>`: `ir.config_parameter` ha un
+  vincolo di unicità sulla chiave, e per `partner_firstname.required_fields` un
+  record esiste già (lo scrive partner_firstname). Passare dalla funzione tratta
+  le tre chiavi allo stesso modo e non lega questo file all'ID esterno OCA.
+-->
+<odoo noupdate="1">
+
+    <function
+        model="ir.config_parameter"
+        name="set_param"
+        eval="('partner_names_order', 'last_first')"
+    />
+
+    <function
+        model="ir.config_parameter"
+        name="set_param"
+        eval="('partner_firstname.required_fields', 'firstname_lastname')"
+    />
+
+    <function
+        model="ir.config_parameter"
+        name="set_param"
+        eval="('employee_names_order', 'last_first')"
+    />
+
+</odoo>

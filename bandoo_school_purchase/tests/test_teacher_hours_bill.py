@@ -23,10 +23,12 @@ class TestTeacherHoursBill(TransactionCase):
         self.env['ir.config_parameter'].sudo().set_param(
             'bandoo_school_purchase.teacher_hour_product_id', str(self.product.id))
 
-        self.teacher_partner = self.env['res.partner'].create({'name': 'Mario Rossi'})
+        # hr_employee_firstname (D-22) crea il work contact e vi scrive
+        # cognome e nome: il partner dell'insegnante non si crea a mano.
         self.teacher = self.env['hr.employee'].create({
-            'name': 'Mario Rossi', 'work_contact_id': self.teacher_partner.id,
+            'lastname': 'Rossi', 'firstname': 'Mario',
         })
+        self.teacher_partner = self.teacher.work_contact_id
         # Listino fornitore: la tariffa di Mario è 30/h.
         self.env['product.supplierinfo'].create({
             'partner_id': self.teacher_partner.id,
@@ -77,10 +79,10 @@ class TestTeacherHoursBill(TransactionCase):
 
     def test_fallback_costo_prodotto_senza_listino(self):
         # Insegnante senza listino fornitore -> si usa il costo del prodotto (20).
-        other_partner = self.env['res.partner'].create({'name': 'Senza Listino'})
         other = self.env['hr.employee'].create({
-            'name': 'Senza Listino', 'work_contact_id': other_partner.id,
+            'lastname': 'Senza Listino', 'firstname': 'Test',
         })
+        other_partner = other.work_contact_id
         self._timesheet(self._task('L1'), employee=other)
         po = self._bill(employee=other)
         self.assertEqual(po.order_line.price_unit, 20.0)
@@ -105,10 +107,10 @@ class TestTeacherHoursBill(TransactionCase):
             self._bill()
 
     def test_supplente_ordine_distinto(self):
-        sub_partner = self.env['res.partner'].create({'name': 'Supplente'})
         sub = self.env['hr.employee'].create({
-            'name': 'Supplente', 'work_contact_id': sub_partner.id,
+            'lastname': 'Supplente', 'firstname': 'Test',
         })
+        sub_partner = sub.work_contact_id
         self._timesheet(self._task('L1'))
         self._timesheet(self._task('L2'), employee=sub)
 
