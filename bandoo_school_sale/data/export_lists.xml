@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Lista di export dei prodotti-corso, seguito di `bandoo_school/data/export_lists.xml`.
+
+  Sta qui e non lì perché i campi che descrive li definisce questo modulo:
+  `x_course_project_id` e il tracciamento `course_collective`. `bandoo_school`
+  non dipende nemmeno da `product`, e un `ir.exports` non valida né il modello
+  né i nomi dei campi — sono semplici `Char` — quindi la lista nel modulo
+  sbagliato non darebbe errore all'installazione: si romperebbe in silenzio
+  all'uso.
+
+  Convenzioni comuni (casella "Voglio aggiornare dei dati", `id` per primo,
+  niente `noupdate`) spiegate in testata al file di `bandoo_school`.
+-->
+<odoo>
+
+    <!--
+      `taxes_id` sta nella lista **proprio perché deve restare vuoto**: le
+      rette sono fuori campo IVA, e una colonna assente lascerebbe il default
+      del 22% ereditato dall'azienda.
+
+      Si carica **dopo** i progetti (`Bandoo · L2 · Progetti-corso`, in
+      `bandoo_school`): `project_template_id` e `x_course_project_id` li
+      referenziano per ID esterno, e un padre mancante fa fallire la riga.
+    -->
+    <record id="export_l2_course_product" model="ir.exports">
+        <field name="name">Bandoo · L2 · Prodotti-corso</field>
+        <field name="resource">product.template</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'name'}),
+            (0, 0, {'name': 'type'}),
+            (0, 0, {'name': 'list_price'}),
+            (0, 0, {'name': 'taxes_id'}),
+            (0, 0, {'name': 'service_tracking'}),
+            (0, 0, {'name': 'project_template_id/id'}),
+            (0, 0, {'name': 'x_course_project_id/id'}),
+        ]"/>
+    </record>
+
+</odoo>

@@ -1,6 +1,6 @@
 {
     'name': 'Bandoo School Sale',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'summary': 'Iscrizioni a corsi, rette e conguaglio per la scuola di musica',
     'category': 'Sales',
     'depends': [
@@ -10,6 +10,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'data/export_lists.xml',
         'views/product_template_views.xml',
         'views/sale_order_views.xml',
         'views/enrollment_settlement_views.xml',

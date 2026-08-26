@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Liste di export pronte per il giro export/import delle anagrafiche.
+
+  A cosa servono: chi esporta apre `⚙ Esporta`, spunta **"È un aggiornamento
+  dati (compatibile con l'importazione)""** e sceglie qui la lista invece
+  di ricomporre i campi a mano.
+
+  ATTENZIONE, senza la casella non esce nessun `id`, e un file senza ID
+  esterno reimportato **crea record nuovi invece di aggiornare quelli
+  esistenti**, in silenzio.
+
+  L'ordine delle colonne è l'ordine dei tuple: `ir.exports.line` ha
+  `_order = 'id'`, quindi conta come sono scritti.
+
+  `(5, 0, 0)` in testa a ogni lista non è decorazione: su un record che esiste
+  già, `(0, 0, {...})` **aggiunge** righe senza togliere quelle vecchie. Senza
+  lo svuotamento, ogni aggiornamento del modulo duplica tutte le colonne —
+  misurato.
+
+  Nessun `noupdate`: Migliorarne i campi deve propagarsi all'aggiornamento
+  del modulo, al prezzo che una lista personalizzata dall'interfaccia viene
+  riportata com'era.
+
+-->
+<odoo>
+
+    <!-- ============================ L1 ============================ -->
+
+    <record id="export_l1_room" model="ir.exports">
+        <field name="name">Bandoo · L1 · Aule</field>
+        <field name="resource">bandoo.room</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'name'}),
+        ]"/>
+    </record>
+
+    <record id="export_l1_student" model="ir.exports">
+        <field name="name">Bandoo · L1 · Studenti</field>
+        <field name="resource">res.partner</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'firstname'}),
+            (0, 0, {'name': 'lastname'}),
+            (0, 0, {'name': 'email'}),
+            (0, 0, {'name': 'phone'}),
+        ]"/>
+    </record>
+
+    <!--
+      I genitori sono contatti associati dentro la scheda dello studente, non
+      contatti principali: `parent_id/id` punta all'ID esterno dello studente
+      e `type` vale `contact`. Senza queste due colonne rientrerebbero come
+      persone slegate.
+      Si carica **dopo** la lista studenti: il padre deve esistere prima del
+      figlio.
+    -->
+    <record id="export_l1_parent" model="ir.exports">
+        <field name="name">Bandoo · L1 · Genitori (contatti associati)</field>
+        <field name="resource">res.partner</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'firstname'}),
+            (0, 0, {'name': 'lastname'}),
+            (0, 0, {'name': 'email'}),
+            (0, 0, {'name': 'phone'}),
+            (0, 0, {'name': 'parent_id/id'}),
+            (0, 0, {'name': 'type'}),
+        ]"/>
+    </record>
+
+    <!--
+      Niente `work_contact_id`: lo crea `hr` da sé alla creazione del
+      dipendente. Da verificare al primo giro che cognome e nome si propaghino
+      davvero al contatto lavoro come fanno inserendoli a mano (D-22): se non
+      succede, qui serve una lista in più.
+    -->
+    <record id="export_l1_teacher" model="ir.exports">
+        <field name="name">Bandoo · L1 · Insegnanti</field>
+        <field name="resource">hr.employee</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'firstname'}),
+            (0, 0, {'name': 'lastname'}),
+            (0, 0, {'name': 'job_title'}),
+        ]"/>
+    </record>
+
+    <!-- ============================ L2 ============================ -->
+
+    <!--
+      `active` serve perché il template dei corsi individuali va archiviato
+      dopo aver collegato il prodotto: senza quella colonna rientrerebbe
+      attivo e ricomparirebbe fra i corsi operativi.
+    -->
+    <record id="export_l2_project" model="ir.exports">
+        <field name="name">Bandoo · L2 · Progetti-corso</field>
+        <field name="resource">project.project</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'name'}),
+            (0, 0, {'name': 'active'}),
+            (0, 0, {'name': 'allow_timesheets'}),
+            (0, 0, {'name': 'x_lesson_target'}),
+        ]"/>
+    </record>
+
+    <!--
+      La lista dei prodotti-corso non sta qui ma in `bandoo_school_sale`: i
+      campi che descrive (`x_course_project_id`, il tracciamento
+      `course_collective`) li definisce quel modulo, e questo non dipende
+      nemmeno da `product`. Un `ir.exports` non valida né il modello né i
+      campi — sono semplici `Char` — quindi una lista nel modulo sbagliato non
+      darebbe errore all'installazione: si romperebbe in silenzio all'uso.
+    -->
+
+</odoo>
