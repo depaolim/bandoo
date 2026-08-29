@@ -6,6 +6,7 @@
         <field name="model">bandoo.room</field>
         <field name="arch" type="xml">
             <list editable="bottom">
+                <field name="building"/>
                 <field name="name"/>
             </list>
         </field>

@@ -6,6 +6,10 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
+            <!-- Fase nascosta, non tolta dal modello (`D-28`). -->
+            <field name="stage_id" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
             <!-- Aula: aggiungi dopo il div date_deadline -->
             <div id="date_deadline_and_recurring_task" position="after">
                 <field name="room_id" invisible="not project_id"/>
@@ -27,6 +31,22 @@
                     </field>
                 </page>
             </notebook>
+        </field>
+    </record>
+
+    <record id="view_task_list_bandoo_school" model="ir.ui.view">
+        <field name="name">project.task.list.bandoo.school</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.project_task_view_tree_base"/>
+        <field name="arch" type="xml">
+            <!-- Due colonne stage_id, distinte solo dal gruppo: si nascondono
+                 per posizione, perche' l'attributo name non le distingue. -->
+            <xpath expr="(//field[@name='stage_id'])[1]" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='stage_id'])[2]" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </xpath>
         </field>
     </record>
 

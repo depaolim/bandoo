@@ -32,6 +32,7 @@
         <field name="resource">bandoo.room</field>
         <field name="export_fields" eval="[
             (5, 0, 0),
+            (0, 0, {'name': 'building'}),
             (0, 0, {'name': 'name'}),
         ]"/>
     </record>
