@@ -1,6 +1,16 @@
 # Scuola di musica — guida funzionale e operativa
 
-**Documento del 01/08/2026** · riferito a **bandoo 18.0.1.0.0**
+**Documento del 01/08/2026** · riferito a **bandoo 18.0.1.1.0**
+
+> ⚠️ **Il catalogo qui descritto è superato.** Dal 29/08/2026 i corsi si vendono con articoli
+> per categoria e durata, lo strumento è una variante, e il prezzo sta in un listino per anno
+> invece che sul prodotto. Sono cambiati anche gli appuntamenti coperti dalla quota, il nome
+> del registro, l'assegnazione dell'insegnante e le fasi delle lezioni.
+>
+> **La guida aggiornata è in lavorazione.** Nel frattempo restano validi il modello dei due
+> cicli (`G-01`), tutto il **ciclo passivo** (`G-15` e seguenti) e le cose da sapere (`G-25`);
+> vanno invece considerate superate le sezioni del **ciclo attivo** che descrivono aule,
+> registri e corsi a catalogo (`G-05`…`G-08`).
 
 ---
 
