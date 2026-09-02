@@ -349,6 +349,67 @@ class TestEnrollmentFlow(BandooCase):
         })]})
         self.assertIn(self.student, solfeggio.enrolled_student_ids)
 
+    def test_durata_scende_su_registro_e_lezioni(self):
+        """La durata dell'articolo diventa Tempo assegnato sulle lezioni.
+
+        Senza, le ore registrate dall'insegnante non hanno un termine di
+        confronto e il compenso si fonda su un numero non verificabile.
+        """
+        template = self.env['project.project'].create({
+            'name': 'Template Prova', 'allow_timesheets': True,
+            'allow_billable': True, 'x_lesson_target': 30,
+        })
+        product = self.env['product.product'].create({
+            'name': 'Corso Individuale Prova', 'type': 'service',
+            'list_price': 600.0, 'service_tracking': 'project_only',
+            'project_template_id': template.id, 'x_lesson_duration': 45,
+        })
+        order = self._order(self.student, [(product, 600.0)])
+        order.action_confirm()
+        registro = order.order_line.x_project_id
+
+        self.assertEqual(registro.x_lesson_duration, 45)
+        # 30 appuntamenti da 45 minuti = 22,5 ore d'anno
+        self.assertAlmostEqual(registro.allocated_hours, 22.5)
+
+        # vale anche per una lezione aggiunta a mano: e' il caso dei saggi
+        lezione = self.env['project.task'].create(
+            {'name': 'Saggio invernale', 'project_id': registro.id})
+        self.assertAlmostEqual(lezione.allocated_hours, 0.75)
+
+    def test_insegnante_su_riga_collettiva_respinto(self):
+        """Il corso collettivo ha gia' il suo responsabile: indicarlo sulla
+        riga non farebbe nulla, quindi viene respinto."""
+        # partner_firstname (D-21) rifiuta un partner senza cognome e nome,
+        # e la creazione di un utente ne crea uno: vanno passati espliciti.
+        user = self.env['res.users'].create({
+            'lastname': 'Insegnante', 'firstname': 'Test',
+            'login': 'ins@bandoo.test'})
+        self.env['hr.employee'].create({
+            'lastname': 'Insegnante', 'firstname': 'Test', 'user_id': user.id})
+        with self.assertRaises(ValidationError):
+            self.order.order_line[0].x_teacher_id = user
+
+    def test_due_righe_stesso_corso_respinte(self):
+        """Due iscrizioni allo stesso corso nello stesso ordine: bloccate.
+
+        Senza il vincolo condividerebbero un registro solo, e il conguaglio
+        conterebbe le stesse lezioni per entrambe.
+        """
+        with self.assertRaises(ValidationError):
+            self._order(self.student, [(self.product, 400.0),
+                                       (self.product, 400.0)])
+
+    def test_riga_azzerata_non_impedisce_reiscrizione(self):
+        """Una riga annullata (quantita' zero) non fa doppione: si puo'
+        reiscrivere allo stesso corso nello stesso ordine."""
+        order = self._order(self.student, [(self.product, 400.0)])
+        order.order_line.product_uom_qty = 0
+        self.env['sale.order.line'].create({
+            'order_id': order.id, 'product_id': self.product.id,
+            'price_unit': 400.0, 'product_uom_qty': 1.0})
+        self.assertEqual(len(order.order_line), 2)
+
     def test_riga_azzerata_non_iscrive(self):
         # Su ordine confermato le righe non si eliminano: la convenzione
         # Odoo è quantità 0. La riga azzerata non deve iscrivere né contare

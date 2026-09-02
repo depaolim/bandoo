@@ -1,6 +1,6 @@
 {
     'name': 'Bandoo School',
-    'version': '18.0.1.3.0',
+    'version': '18.0.1.7.0',
     'summary': 'Gestione corsi, lezioni e presenze per la scuola di musica',
     'category': 'Project',
     'depends': [

@@ -15,21 +15,22 @@ class EnrollmentSettlement(models.Model):
     project_id = fields.Many2one('project.project', string='Corso', readonly=True)
     annual_price = fields.Float(string='Prezzo annuo (P)', readonly=True)
     target = fields.Integer(
-        string='Lezioni previste', readonly=True,
-        help='Dalla riga d\'ordine (proposte dal corso, ridotte per le '
-             'iscrizioni a metà anno).')
+        string='Appuntamenti previsti', readonly=True,
+        help='Dalla riga d\'ordine (proposti dal corso, ridotti per le '
+             'iscrizioni a metà anno). Lezioni e saggi: la quota li copre '
+             'tutti, ed e\' su questo numero che si divide.')
     lessons_held = fields.Integer(
-        string='Lezioni erogate', readonly=True,
-        help='Lezioni svolte (con ore registrate) in cui l\'iscritto era in '
-             'elenco presenze: le lezioni tenute prima dell\'iscrizione non '
-             'contano.')
+        string='Appuntamenti erogati', readonly=True,
+        help='Appuntamenti svolti (con ore registrate) in cui l\'iscritto era '
+             'in elenco presenze: quelli tenuti prima dell\'iscrizione non '
+             'contano. I saggi rientrano, sono lezioni a tutti gli effetti.')
     justified_absences = fields.Integer(string='Assenze giustificate', readonly=True)
 
     # --- aritmetica in Python (non-stored, testabile a unità) ---
     price_per_lesson = fields.Float(
-        string='Prezzo lezione', compute='_compute_amounts')
+        string='Prezzo appuntamento', compute='_compute_amounts')
     missed_lessons = fields.Integer(
-        string='Lezioni mai erogate', compute='_compute_amounts')
+        string='Appuntamenti mai erogati', compute='_compute_amounts')
     deduction = fields.Float(
         string='Detrazione', compute='_compute_amounts')
     installment_1 = fields.Float(string='Rata 1', compute='_compute_amounts')

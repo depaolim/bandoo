@@ -4,7 +4,22 @@ from odoo import api, fields, models
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    x_lesson_target = fields.Integer(string='Lezioni previste', default=28)
+    # Appuntamenti, non lezioni: 28 lezioni piu' i due saggi, che sono lezioni
+    # a tutti gli effetti (fogli ore, presenze, compenso) e rientrano nella
+    # quota. E' il numero su cui il conguaglio divide la quota annua.
+    # Durata della singola lezione, in minuti. La portano le lezioni come
+    # "Tempo assegnato" (allocated_hours, in ore): e' l'unico termine di
+    # confronto delle ore che l'insegnante registra, e su cui si fonda il
+    # compenso.
+    x_lesson_duration = fields.Integer(
+        string='Durata lezione (minuti)',
+        help='Durata di una lezione di questo corso. Ogni lezione nuova nasce '
+             'con il Tempo assegnato corrispondente.')
+    x_lesson_target = fields.Integer(
+        string='Appuntamenti previsti', default=30,
+        help='Appuntamenti coperti dalla quota annua: le lezioni ordinarie '
+             'piu\' i saggi. Il wizard ne propone di meno da generare, '
+             'perche\' la data dei saggi si sa solo dopo.')
     enrolled_student_ids = fields.Many2many(
         'res.partner', string='Studenti iscritti',
         compute='_compute_enrolled_student_ids',

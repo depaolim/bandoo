@@ -16,6 +16,7 @@
                     <group>
                         <field name="date_start"/>
                         <field name="start_time" widget="float_time"/>
+                        <field name="recital_count"/>
                         <field name="count"/>
                         <field name="interval_weeks"/>
                     </group>

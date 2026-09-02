@@ -24,20 +24,36 @@ class LessonGenerate(models.TransientModel):
         string='Ora inizio', required=True, default=15.0,
         help='Ora di inizio della lezione, in ora locale.',
     )
-    count = fields.Integer(string='Numero lezioni', required=True, default=28)
+    count = fields.Integer(
+        string='Numero lezioni', required=True, default=28,
+        help='Quante lezioni generare adesso. Meno degli appuntamenti '
+             'previsti dal corso: i saggi si aggiungono a mano quando se ne '
+             'conosce la data.')
+    recital_count = fields.Integer(
+        string='Di cui saggi', required=True, default=2,
+        help='Appuntamenti che non si generano ora perche\' la data non e\' '
+             'ancora nota. Sottratti dagli appuntamenti previsti per proporre '
+             'quante lezioni generare.')
     interval_weeks = fields.Integer(
         string='Cadenza (settimane)', required=True, default=1,
     )
 
-    @api.onchange('project_id')
+    @api.onchange('project_id', 'recital_count')
     def _onchange_project_id(self):
-        """Proposte dal corso (modificabili): insegnante e numero lezioni."""
+        """Proposte dal corso (modificabili): insegnante e numero lezioni.
+
+        Le lezioni da generare sono gli appuntamenti previsti **meno i
+        saggi**: quelli si aggiungono a mano quando se ne conosce la data.
+        Proporre il numero pieno farebbe generare due appuntamenti di troppo,
+        e il conguaglio li conterebbe come erogati.
+        """
         if not self.project_id:
             return
         if self.project_id.user_id:
             self.user_ids = self.project_id.user_id
         if self.project_id.x_lesson_target:
-            self.count = self.project_id.x_lesson_target
+            self.count = max(
+                0, self.project_id.x_lesson_target - (self.recital_count or 0))
 
     def action_generate(self):
         self.ensure_one()

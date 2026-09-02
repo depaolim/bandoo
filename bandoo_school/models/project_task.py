@@ -29,6 +29,11 @@ class ProjectTask(models.Model):
     def create(self, vals_list):
         tasks = super().create(vals_list)
         for task in tasks:
+            # Ore attese dalla durata del corso: vale sia per le lezioni
+            # generate dal wizard sia per quelle aggiunte a mano, i saggi
+            # compresi. Un valore esplicito in creazione vince.
+            if not task.allocated_hours and task.project_id.x_lesson_duration:
+                task.allocated_hours = task.project_id.x_lesson_duration / 60.0
             students = (
                 task.project_id._get_enrolled_students()
                 if task.project_id else self.env['res.partner']

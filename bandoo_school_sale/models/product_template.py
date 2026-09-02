@@ -18,6 +18,13 @@ class ProductTemplate(models.Model):
              'iscrizioni. Per i corsi individuali usare invece '
              '"Progetto" come tracciamento con un template di progetto.',
     )
+    # In minuti, che e' l'unita' in cui la scuola parla: 30, 45, 60. Le ore
+    # decimali servono solo ai fogli ore, e la divisione sta li'.
+    x_lesson_duration = fields.Integer(
+        string='Durata lezione (minuti)',
+        help='Durata di una singola lezione. Serve a comporre il nome del '
+             'registro e a proporre le ore attese sulla lezione.',
+    )
     # Un prodotto è un corso quando il tracciamento è "Progetto" (individuale)
     # o "Corso collettivo".
     x_is_course = fields.Boolean(compute='_compute_x_is_course')

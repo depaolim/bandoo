@@ -12,6 +12,8 @@
                        options="{'no_create': True}"
                        optional="show"/>
                 <field name="x_lesson_target" optional="show"/>
+                <field name="x_teacher_id" options="{'no_create': True}"
+                       optional="show"/>
             </xpath>
         </field>
     </record>

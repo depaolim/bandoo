@@ -22,6 +22,14 @@
                 <field name="x_course_project_id"
                        invisible="service_tracking != 'course_collective'"
                        nolabel="1"/>
+                <!-- Durata: vale per entrambi i tipi di corso, quindi non ha
+                     la condizione sul tracciamento delle due righe sopra. -->
+                <div class="o_td_label d-inline-flex" invisible="not x_is_course">
+                    <label for="x_lesson_duration"/>
+                </div>
+                <field name="x_lesson_duration"
+                       invisible="not x_is_course" nolabel="1"/>
+                <field name="x_is_course" invisible="1"/>
             </xpath>
         </field>
     </record>

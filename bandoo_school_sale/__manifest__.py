@@ -1,12 +1,16 @@
 {
     'name': 'Bandoo School Sale',
-    'version': '18.0.1.1.0',
+    'version': '18.0.1.6.0',
     'summary': 'Iscrizioni a corsi, rette e conguaglio per la scuola di musica',
     'category': 'Sales',
     'depends': [
         'bandoo_school',
         'sale_management',
         'sale_project',
+        # Esplicito e non incidentale: `sale_timesheet` riscrive
+        # `allocated_hours` sul progetto generato, e senza questa dipendenza il
+        # nostro override girerebbe *prima* del suo e verrebbe sovrascritto.
+        'sale_timesheet',
     ],
     'data': [
         'security/ir.model.access.csv',

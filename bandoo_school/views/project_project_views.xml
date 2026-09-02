@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <field name="user_id" position="after">
                 <field name="x_lesson_target"/>
+                <field name="x_lesson_duration"/>
             </field>
             <notebook position="inside">
                 <page name="students" string="Studenti iscritti">
@@ -18,6 +19,19 @@
                             help="Aggiunge gli iscritti mancanti alle presenze delle lezioni non ancora svolte."/>
                 </page>
             </notebook>
+        </field>
+    </record>
+
+    <record id="view_project_search_bandoo_school" model="ir.ui.view">
+        <field name="name">project.project.search.bandoo.school</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_project_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="no_teacher" string="In attesa di insegnante"
+                        domain="[('user_id', '=', False)]"/>
+            </xpath>
         </field>
     </record>
 
