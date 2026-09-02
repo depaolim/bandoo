@@ -1,6 +1,6 @@
 {
     'name': 'Bandoo Branding',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'summary': 'Custom branding for the Bandoo login page',
     'category': 'Technical',
     'depends': [
@@ -37,7 +37,6 @@
         'portal_rating',
         'project',
         'project_hr_skills',
-        'project_task_default_stage',
         'project_todo',
         'purchase',
         'rating',
