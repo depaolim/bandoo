@@ -8,6 +8,7 @@
             <form string="Compenso ore insegnante">
                 <group>
                     <field name="employee_id"/>
+                    <field name="product_id"/>
                     <field name="project_id"/>
                 </group>
                 <footer>

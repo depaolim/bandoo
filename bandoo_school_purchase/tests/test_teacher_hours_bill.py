@@ -92,6 +92,15 @@ class TestTeacherHoursBill(TransactionCase):
         defaults = self.env['bandoo.teacher.hours.bill'].default_get(['product_id'])
         self.assertEqual(defaults.get('product_id'), self.product.id)
 
+    def test_prodotto_modificabile_nel_form(self):
+        # Campo obbligatorio: se non è nel form e l'impostazione manca,
+        # il wizard fallisce con un errore SQL non rimediabile dall'utente.
+        arch = self.env['bandoo.teacher.hours.bill'].get_view(
+            self.env.ref(
+                'bandoo_school_purchase.bandoo_teacher_hours_bill_form').id,
+            'form')['arch']
+        self.assertIn('name="product_id"', arch)
+
     def test_ore_stesso_task_sommate(self):
         t1 = self._task('L1')
         self._timesheet(t1, hours=1.0)
