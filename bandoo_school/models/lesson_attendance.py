@@ -3,13 +3,13 @@ from odoo import fields, models, tools
 
 class LessonAttendance(models.Model):
     _name = 'bandoo.lesson.attendance'
-    _description = 'Consuntivo presenze lezioni'
+    _description = 'Presenze'
     _auto = False
     _rec_name = 'partner_id'
 
     task_id = fields.Many2one('project.task', string='Lezione', readonly=True)
     project_id = fields.Many2one('project.project', string='Corso', readonly=True)
-    partner_id = fields.Many2one('res.partner', string='Studente', readonly=True)
+    partner_id = fields.Many2one('res.partner', string='Allievo', readonly=True)
     status = fields.Selection([
         ('present', 'Presente'),
         ('absent', 'Assente'),
@@ -19,7 +19,7 @@ class LessonAttendance(models.Model):
         ('pays', 'Paga'),
         ('free', 'Non paga'),
     ], string='Ai fini retta', readonly=True,
-        help='Presente e assente ingiustificato pagano la lezione; '
+        help='Presente e assente pagano la lezione; '
              'assente giustificato non paga.')
     date = fields.Date(string='Data lezione', readonly=True)
 

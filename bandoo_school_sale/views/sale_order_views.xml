@@ -8,8 +8,14 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='order_line']/list//field[@name='product_id']"
                    position="before">
-                <field name="x_project_id"
+                <!-- Il corso della riga è il project_id standard (D-32):
+                     generato alla conferma sulle individuali, scelto fra i
+                     corsi collettivi del corso a catalogo sulle collettive. -->
+                <field name="service_tracking" column_invisible="1"/>
+                <field name="project_id" string="Corso"
                        options="{'no_create': True}"
+                       domain="[('x_course_product_id', '=', product_template_id)]"
+                       readonly="service_tracking == 'project_only'"
                        optional="show"/>
                 <field name="x_lesson_target" optional="show"/>
                 <field name="x_teacher_id" options="{'no_create': True}"

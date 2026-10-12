@@ -15,20 +15,17 @@
                  was: configuring a collective course meant changing tab.
                  Same markup as Odoo uses for its own conditional fields. -->
             <xpath expr="//field[@name='project_template_id']" position="after">
-                <div class="o_td_label d-inline-flex"
-                     invisible="service_tracking != 'course_collective'">
-                    <label for="x_course_project_id"/>
-                </div>
-                <field name="x_course_project_id"
-                       invisible="service_tracking != 'course_collective'"
-                       nolabel="1"/>
-                <!-- Durata: vale per entrambi i tipi di corso, quindi non ha
-                     la condizione sul tracciamento delle due righe sopra. -->
-                <div class="o_td_label d-inline-flex" invisible="not x_is_course">
+                <!-- Durata: vale per gli individuali. -->
+                <div class="o_td_label d-inline-flex" invisible="service_tracking != 'project_only'">
                     <label for="x_lesson_duration"/>
                 </div>
                 <field name="x_lesson_duration"
-                       invisible="not x_is_course" nolabel="1"/>
+                       invisible="service_tracking != 'project_only'" nolabel="1"/>
+                <div class="o_td_label d-inline-flex" invisible="type != 'service'">
+                    <label for="x_lesson_target"/>
+                </div>
+                <field name="x_lesson_target"
+                       invisible="type != 'service'" nolabel="1"/>
                 <field name="x_is_course" invisible="1"/>
             </xpath>
         </field>

@@ -11,12 +11,12 @@
                 <field name="x_lesson_duration"/>
             </field>
             <notebook position="inside">
-                <page name="students" string="Studenti iscritti">
+                <page name="students" string="Allievi iscritti">
                     <field name="enrolled_student_ids" widget="many2many_tags"/>
-                    <button name="action_align_future_attendance"
+                    <button name="action_align_attendance"
                             type="object"
-                            string="Allinea presenze lezioni future"
-                            help="Aggiunge gli iscritti mancanti alle presenze delle lezioni non ancora svolte."/>
+                            string="Riallinea presenze"
+                            help="Aggiunge gli iscritti mancanti e toglie chi non lo è più, sulle lezioni non rendicontate."/>
                 </page>
             </notebook>
         </field>
@@ -35,4 +35,14 @@
         </field>
     </record>
 
+    <record id="view_project_list_bandoo_school" model="ir.ui.view">
+        <field name="name">project.project.list.bandoo.school</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project"/>
+        <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="x_enrolled_count" optional="show"/>
+            </field>
+        </field>
+    </record>
 </odoo>

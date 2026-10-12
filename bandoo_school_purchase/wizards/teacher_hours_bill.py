@@ -4,7 +4,7 @@ from odoo.exceptions import UserError
 
 class TeacherHoursBill(models.TransientModel):
     _name = 'bandoo.teacher.hours.bill'
-    _description = 'Compenso ore insegnante'
+    _description = 'Consuntivo insegnante'
 
     employee_id = fields.Many2one(
         'hr.employee', string='Insegnante', required=True,
@@ -87,7 +87,7 @@ class TeacherHoursBill(models.TransientModel):
 
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Compenso insegnante'),
+            'name': _('Ordine ore insegnante'),
             'res_model': 'purchase.order',
             'res_id': order.id,
             'view_mode': 'form',

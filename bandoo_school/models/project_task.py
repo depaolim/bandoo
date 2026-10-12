@@ -10,10 +10,10 @@ class ProjectTask(models.Model):
         string='Presenze',
     )
     x_is_held = fields.Boolean(
-        string='Svolta', compute='_compute_x_is_held',
+        string='Rendicontata', compute='_compute_x_is_held',
         search='_search_x_is_held',
-        help='La lezione è svolta se e solo se l\'insegnante ha registrato '
-             'le ore: nessuna fase da impostare a mano.',
+        help='La lezione è rendicontata se e solo se l\'insegnante ha '
+             'registrato le ore: nessuna fase da impostare a mano.',
     )
 
     @api.depends('timesheet_ids')

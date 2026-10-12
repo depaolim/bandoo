@@ -38,7 +38,7 @@
     </record>
 
     <record id="export_l1_student" model="ir.exports">
-        <field name="name">Bandoo · L1 · Studenti</field>
+        <field name="name">Bandoo · L1 · Allievi</field>
         <field name="resource">res.partner</field>
         <field name="export_fields" eval="[
             (5, 0, 0),
@@ -51,7 +51,7 @@
     </record>
 
     <record id="export_l1_parent" model="ir.exports">
-        <field name="name">Bandoo · L1 · Genitori (contatti associati)</field>
+        <field name="name">Bandoo · L1 · Genitori</field>
         <field name="resource">res.partner</field>
         <field name="export_fields" eval="[
             (5, 0, 0),
@@ -76,18 +76,9 @@
         ]"/>
     </record>
 
-    <!-- ============================ L2 ============================ -->
-
-    <record id="export_l2_project" model="ir.exports">
-        <field name="name">Bandoo · L2 · Progetti-corso</field>
-        <field name="resource">project.project</field>
-        <field name="export_fields" eval="[
-            (5, 0, 0),
-            (0, 0, {'name': 'name'}),
-            (0, 0, {'name': 'active'}),
-            (0, 0, {'name': 'allow_timesheets'}),
-            (0, 0, {'name': 'x_lesson_target'}),
-        ]"/>
-    </record>
+    <!--
+      Le liste L2 (catalogo) stanno in `bandoo_school_sale`: descrivono campi
+      di `product` e `sale_project`, da cui questo modulo non dipende.
+    -->
 
 </odoo>

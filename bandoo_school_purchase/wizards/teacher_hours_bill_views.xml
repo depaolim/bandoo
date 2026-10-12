@@ -5,7 +5,7 @@
         <field name="name">bandoo.teacher.hours.bill.form</field>
         <field name="model">bandoo.teacher.hours.bill</field>
         <field name="arch" type="xml">
-            <form string="Compenso ore insegnante">
+            <form string="Consuntivo insegnante">
                 <group>
                     <field name="employee_id"/>
                     <field name="product_id"/>
@@ -21,7 +21,7 @@
     </record>
 
     <record id="bandoo_teacher_hours_bill_action" model="ir.actions.act_window">
-        <field name="name">Compenso ore insegnante</field>
+        <field name="name">Consuntivo insegnante</field>
         <field name="res_model">bandoo.teacher.hours.bill</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -29,7 +29,7 @@
 
     <menuitem
         id="menu_bandoo_teacher_hours_bill"
-        name="Compenso ore insegnante"
+        name="Consuntivo insegnante"
         parent="purchase.menu_purchase_root"
         action="bandoo_teacher_hours_bill_action"
         sequence="90"/>

@@ -57,9 +57,9 @@
         <field name="arch" type="xml">
             <xpath expr="//search" position="inside">
                 <separator/>
-                <filter name="held" string="Svolte"
+                <filter name="held" string="Rendicontate"
                         domain="[('x_is_held', '=', True)]"/>
-                <filter name="not_held" string="Da svolgere"
+                <filter name="not_held" string="Da rendicontare"
                         domain="[('x_is_held', '=', False)]"/>
             </xpath>
         </field>

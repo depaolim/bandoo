@@ -26,13 +26,13 @@ class LessonGenerate(models.TransientModel):
     )
     count = fields.Integer(
         string='Numero lezioni', required=True, default=28,
-        help='Quante lezioni generare adesso. Meno degli appuntamenti '
-             'previsti dal corso: i saggi si aggiungono a mano quando se ne '
-             'conosce la data.')
+        help='Quante lezioni generare adesso. Meno delle lezioni previste '
+             'dal corso: i saggi si aggiungono a mano quando se ne conosce '
+             'la data.')
     recital_count = fields.Integer(
-        string='Di cui saggi', required=True, default=2,
-        help='Appuntamenti che non si generano ora perche\' la data non e\' '
-             'ancora nota. Sottratti dagli appuntamenti previsti per proporre '
+        string='Saggi esclusi', required=True, default=2,
+        help='Saggi da aggiungere a mano quando se ne conosce la data: non si '
+             'generano ora. Sottratti dalle lezioni previste per proporre '
              'quante lezioni generare.')
     interval_weeks = fields.Integer(
         string='Cadenza (settimane)', required=True, default=1,
@@ -42,10 +42,10 @@ class LessonGenerate(models.TransientModel):
     def _onchange_project_id(self):
         """Proposte dal corso (modificabili): insegnante e numero lezioni.
 
-        Le lezioni da generare sono gli appuntamenti previsti **meno i
-        saggi**: quelli si aggiungono a mano quando se ne conosce la data.
-        Proporre il numero pieno farebbe generare due appuntamenti di troppo,
-        e il conguaglio li conterebbe come erogati.
+        Le lezioni da generare sono le lezioni previste **meno i saggi**:
+        quelli si aggiungono a mano quando se ne conosce la data. Proporre il
+        numero pieno farebbe generare due lezioni di troppo, e il consuntivo
+        allievo le conterebbe come erogate (`S-05`).
         """
         if not self.project_id:
             return

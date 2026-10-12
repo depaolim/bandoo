@@ -1,6 +1,7 @@
 from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
+from odoo.tools.safe_eval import safe_eval
 
 
 @tagged('standard', 'at_install', 'bandoo')
@@ -59,6 +60,15 @@ class TestSettlementArithmetic(TransactionCase):
         self.assertEqual(s.deduction, 30.0)
         self.assertEqual(s.installment_3, 64.0)  # 280 - 186 - 30
 
+    def test_recupero_oltre_le_previste(self):
+        # Tutte le lezioni del corso tenute, una giustificata recuperata in un
+        # altro corso collettivo: il recupero la compensa (D-36).
+        s = self._settlement(120.0, 4, 5, 1)
+        self.assertEqual(s.missed_lessons, 0)
+        self.assertEqual(s.paid_lessons, 4)
+        self.assertEqual(s.deduction, 0.0)
+        self.assertEqual(s.installment_3, 40.0)  # 120 - 40 - 40
+
 
 class BandooCase(TransactionCase):
     """Setup comune: corso collettivo con prodotto, studente figlio del
@@ -88,21 +98,29 @@ class BandooCase(TransactionCase):
         return self.env['res.partner'].create(
             {'lastname': lastname, 'firstname': firstname, **vals})
 
-    def _course_product(self, name, project, price):
-        """Prodotto-corso collettivo: prezzo sul prodotto, progetto condiviso."""
-        return self.env['product.product'].create({
+    def _course_product(self, name, project, price, target=4):
+        """Corso a catalogo collettivo («Crea un ordine» = Nulla, lezioni
+        previste) e il suo corso collettivo (`D-35`)."""
+        product = self.env['product.product'].create({
             'name': name, 'type': 'service', 'list_price': price,
-            'service_tracking': 'course_collective',
-            'x_course_project_id': project.id,
+            'service_tracking': 'no', 'x_lesson_target': target,
         })
+        project.x_course_product_id = product.product_tmpl_id
+        return product
 
     def _order(self, student, product_prices):
-        """Iscrizione = ordine standard: lo studente è l'intestatario."""
+        """Iscrizione = ordine standard: l'allievo è l'intestatario. Le righe
+        collettive nascono già assegnate al corso del loro corso a catalogo,
+        come quando la segreteria lo indica all'iscrizione."""
+        Project = self.env['project.project']
         return self.env['sale.order'].create({
             'partner_id': student.id,
             'order_line': [
                 (0, 0, {'product_id': product.id,
-                        'price_unit': price, 'product_uom_qty': 1.0})
+                        'price_unit': price, 'product_uom_qty': 1.0,
+                        'project_id': Project.search([(
+                            'x_course_product_id', '=',
+                            product.product_tmpl_id.id)], limit=1).id})
                 for product, price in product_prices
             ],
         })
@@ -137,8 +155,8 @@ class TestSettlementIntegration(BandooCase):
     def test_iscrizione_popola_corso(self):
         self.assertIn(self.student, self.course.enrolled_student_ids)
 
-    def test_riga_deriva_progetto_dal_prodotto(self):
-        self.assertEqual(self.order.order_line.x_project_id, self.course)
+    def test_riga_collettiva_sul_suo_corso(self):
+        self.assertEqual(self.order.order_line.project_id, self.course)
 
     def test_conteggi_e_recupero_collettivo(self):
         t1, t2, t3 = self._task('L1'), self._task('L2'), self._task('L3')
@@ -246,21 +264,16 @@ class TestSettlementIntegration(BandooCase):
     def test_rate_ordine_arrotondate_sul_totale(self):
         # Le rate 1/2 dell'ordine sono round(totale/3), non la somma delle
         # rate di riga: due corsi da 100 danno 67 (round(200/3)), non 33+33.
-        products = [
-            self._course_product(
-                name,
-                self.env['project.project'].create(
-                    {'name': name, 'x_lesson_target': 2}),
-                100.0,
-            )
-            for name in ('Canto', 'Batteria')
-        ]
+        projects = [self.env['project.project'].create({'name': name})
+                    for name in ('Canto', 'Batteria')]
+        products = [self._course_product(project.name, project, 100.0, target=2)
+                    for project in projects]
         order = self._order(self.student, [(p, 100.0) for p in products])
         order.action_confirm()
         # Corsi interamente svolti e frequentati: nessuna detrazione.
-        for product in products:
+        for project in projects:
             for n in range(2):
-                task = self._task(f'L{n}', project=product.x_course_project_id)
+                task = self._task(f'L{n}', project=project)
                 self._timesheet(task)
 
         self.env.flush_all()
@@ -332,8 +345,8 @@ class TestEnrollmentFlow(BandooCase):
                 'product_uom_qty': 1.0,
             })],
         })
-        order.action_confirm()  # non è un corso: nessun progetto agganciato
-        self.assertFalse(order.order_line.x_project_id)
+        order.action_confirm()  # non è un corso: nessun corso agganciato
+        self.assertFalse(order.order_line.project_id)
 
     def test_riga_aggiunta_a_ordine_confermato_iscrive(self):
         # Le righe aggiunte a un ordine già confermato nascono in stato
@@ -344,7 +357,7 @@ class TestEnrollmentFlow(BandooCase):
             'name': 'Solfeggio', 'x_lesson_target': 4})
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         self.order.write({'order_line': [(0, 0, {
-            'product_id': solfeggio_product.id,
+            'product_id': solfeggio_product.id, 'project_id': solfeggio.id,
             'price_unit': 120.0, 'product_uom_qty': 1.0,
         })]})
         self.assertIn(self.student, solfeggio.enrolled_student_ids)
@@ -357,19 +370,20 @@ class TestEnrollmentFlow(BandooCase):
         """
         template = self.env['project.project'].create({
             'name': 'Template Prova', 'allow_timesheets': True,
-            'allow_billable': True, 'x_lesson_target': 30,
+            'allow_billable': True,
         })
         product = self.env['product.product'].create({
             'name': 'Corso Individuale Prova', 'type': 'service',
             'list_price': 600.0, 'service_tracking': 'project_only',
             'project_template_id': template.id, 'x_lesson_duration': 45,
+            'x_lesson_target': 30,
         })
         order = self._order(self.student, [(product, 600.0)])
         order.action_confirm()
-        registro = order.order_line.x_project_id
+        registro = order.order_line.project_id
 
         self.assertEqual(registro.x_lesson_duration, 45)
-        # 30 appuntamenti da 45 minuti = 22,5 ore d'anno
+        # 30 lezioni previste da 45 minuti = 22,5 ore d'anno
         self.assertAlmostEqual(registro.allocated_hours, 22.5)
 
         # vale anche per una lezione aggiunta a mano: e' il caso dei saggi
@@ -418,13 +432,13 @@ class TestEnrollmentFlow(BandooCase):
             'name': 'Solfeggio', 'x_lesson_target': 4})
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         self.order.write({'order_line': [(0, 0, {
-            'product_id': solfeggio_product.id,
+            'product_id': solfeggio_product.id, 'project_id': solfeggio.id,
             'price_unit': 120.0, 'product_uom_qty': 1.0,
         })]})
         self.assertIn(self.student, solfeggio.enrolled_student_ids)
 
         line = self.order.order_line.filtered(
-            lambda l: l.x_project_id == solfeggio)
+            lambda l: l.project_id == solfeggio)
         line.product_uom_qty = 0.0
         self.assertNotIn(self.student, solfeggio.enrolled_student_ids)
         self.assertFalse(self._settlements(self.student).filtered(
@@ -445,30 +459,96 @@ class TestEnrollmentFlow(BandooCase):
         self.assertNotIn(student2, task.attendance_line_ids.partner_id)
         self.assertIn(self.student, task.attendance_line_ids.partner_id)
 
-    def test_allinea_presenze_lezioni_future(self):
-        t_svolta, t_futura = self._task('L1'), self._task('L2')
-        self._timesheet(t_svolta)
-        # Iscrizione a metà anno: le lezioni esistenti non hanno lo studente.
+    def test_riallineamento_alla_conferma(self):
+        t_rendicontata, t_futura = self._task('L1'), self._task('L2')
+        self._timesheet(t_rendicontata)
+        # Iscrizione a metà anno: la conferma iscrive alle sole lezioni non
+        # rendicontate, senza premere niente (S-08).
         student2 = self._partner('Tardivo')
         self._order(student2, [(self.product, 200.0)]).action_confirm()
-        self.assertNotIn(student2, t_futura.attendance_line_ids.partner_id)
-
-        self.course.action_align_future_attendance()
-        # Solo la lezione non svolta viene integrata.
         self.assertIn(student2, t_futura.attendance_line_ids.partner_id)
-        self.assertNotIn(student2, t_svolta.attendance_line_ids.partner_id)
-        # Idempotente: rilanciare non duplica.
-        count = len(t_futura.attendance_line_ids)
-        self.course.action_align_future_attendance()
-        self.assertEqual(len(t_futura.attendance_line_ids), count)
+        self.assertNotIn(student2, t_rendicontata.attendance_line_ids.partner_id)
 
-    def test_constraint_prodotto_corso_malconfigurato(self):
+    def test_riallinea_presenze_nei_due_sensi(self):
+        task = self._task('L1')
+        intruso = self._partner('Intruso')
+        task.attendance_line_ids = [(0, 0, {'partner_id': intruso.id})]
+        task.attendance_line_ids.filtered(
+            lambda l: l.partner_id == self.student).unlink()
+
+        self.course.action_align_attendance()
+        # Torna chi è iscritto, esce chi non lo è; rilanciato non duplica.
+        self.assertEqual(task.attendance_line_ids.partner_id, self.student)
+        self.course.action_align_attendance()
+        self.assertEqual(len(task.attendance_line_ids), 1)
+
+    def test_constraint_individuale_malconfigurato(self):
+        # Un corso a catalogo individuale vuole modello, durata e lezioni
+        # previste (`D-34`).
         with self.assertRaises(ValidationError), self.cr.savepoint():
             self.env['product.product'].create({
                 'name': 'Corso rotto', 'type': 'service',
-                'service_tracking': 'course_collective',  # senza progetto
+                'service_tracking': 'project_only', 'x_lesson_target': 4,
             })
 
+
+
+@tagged('standard', 'at_install', 'bandoo')
+class TestCollectiveCourses(BandooCase):
+    """Corsi collettivi: più corsi per corso a catalogo (`S-08`, `D-32`)."""
+
+    def setUp(self):
+        super().setUp()
+        # Secondo corso dello stesso corso a catalogo.
+        self.course_b = self.env['project.project'].create({
+            'name': 'Chitarra B',
+            'x_course_product_id': self.product.product_tmpl_id.id,
+        })
+
+    def test_cambio_corso_collettivo(self):
+        # A: una lezione rendicontata e una no; B: una lezione da fare.
+        a_done, a_todo = self._task('A1'), self._task('A2')
+        self._timesheet(a_done)
+        b_todo = self._task('B1', project=self.course_b)
+
+        self.order.order_line.project_id = self.course_b
+        # Le rendicontate restano, le non rendicontate passano al nuovo corso.
+        self.assertIn(self.student, a_done.attendance_line_ids.partner_id)
+        self.assertNotIn(self.student, a_todo.attendance_line_ids.partner_id)
+        self.assertIn(self.student, b_todo.attendance_line_ids.partner_id)
+        # Il consuntivo conta su tutti i corsi del corso a catalogo.
+        self._timesheet(b_todo)
+        s = self._settlements(self.student)
+        self.assertEqual(s.lessons_held, 2)
+        self.assertEqual(s.target, 4)
+
+    def test_riga_senza_corso_poi_assegnata(self):
+        student2 = self._partner('DaAssegnare')
+        order = self.env['sale.order'].create({
+            'partner_id': student2.id,
+            'order_line': [(0, 0, {'product_id': self.product.id,
+                                   'price_unit': 400.0})],
+        })
+        order.action_confirm()
+        # Confermata senza corso: compare fra i «Collettivi da assegnare»,
+        # ed è già nel consuntivo, con zero lezioni.
+        action = self.env.ref(
+            'bandoo_school_sale.action_sale_order_line_collective_to_assign')
+        to_assign = self.env['sale.order.line'].search(
+            safe_eval(action.domain))
+        self.assertIn(order.order_line, to_assign)
+        self.assertEqual(self._settlements(student2).lessons_held, 0)
+
+        order.order_line.project_id = self.course_b
+        self.assertIn(student2, self.course_b.enrolled_student_ids)
+        self.assertNotIn(order.order_line, self.env['sale.order.line'].search(
+            safe_eval(action.domain)))
+
+    def test_corso_di_altro_catalogo_respinto(self):
+        other = self.env['project.project'].create({'name': 'Altro'})
+        self._course_product('Altro', other, 100.0)
+        with self.assertRaises(ValidationError), self.cr.savepoint():
+            self.order.order_line.project_id = other
 
 @tagged('standard', 'at_install', 'bandoo')
 class TestLessonFlags(BandooCase):
@@ -508,13 +588,13 @@ class TestIndividualCourse(BandooCase):
         # questa riga il test passa solo dove l'italiano è già installato.
         self.env['res.lang']._activate_lang('it_IT')
         self.template = self.env['project.project'].create({
-            'name': 'Template Pianoforte', 'x_lesson_target': 4,
-            'active': False,
+            'name': 'Template Pianoforte', 'active': False,
         })
         self.piano = self.env['product.product'].create({
             'name': 'Lezioni Pianoforte', 'type': 'service',
             'list_price': 400.0, 'service_tracking': 'project_only',
             'project_template_id': self.template.id,
+            'x_lesson_target': 4, 'x_lesson_duration': 45,
         })
 
     def test_individuale_end_to_end(self):
@@ -522,12 +602,11 @@ class TestIndividualCourse(BandooCase):
         order.action_confirm()
         line = order.order_line
 
-        # Progetto generato dal template: attivo, target copiato, zero
-        # lezioni fantasma; la riga lo aggancia via project_id standard.
-        project = line.x_project_id
+        # Corso generato dal modello: attivo, lezioni previste copiate dalla
+        # riga, zero lezioni fantasma; la riga lo aggancia via project_id.
+        project = line.project_id
         self.assertTrue(project)
         self.assertNotEqual(project, self.template)
-        self.assertEqual(project, line.project_id)
         self.assertTrue(project.active)
         self.assertEqual(project.x_lesson_target, 4)
         self.assertFalse(project.tasks)

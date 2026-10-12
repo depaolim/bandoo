@@ -1,7 +1,7 @@
 {
     'name': 'Bandoo School Purchase',
     'version': '18.0.1.1.0',
-    'summary': 'Compenso ore insegnante: ordine d\'acquisto dalle ore registrate',
+    'summary': 'Consuntivo insegnante: ordine ore insegnante dalle rendicontazioni',
     'category': 'Purchases',
     'depends': [
         'bandoo_school',

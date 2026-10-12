@@ -10,7 +10,7 @@ class LessonStudentLine(models.Model):
     project_id = fields.Many2one(
         related='task_id.project_id', store=True, precompute=True,
     )
-    partner_id = fields.Many2one('res.partner', string='Studente', required=True)
+    partner_id = fields.Many2one('res.partner', string='Allievo', required=True)
     status = fields.Selection([
         ('present', 'Presente'),
         ('absent', 'Assente'),
@@ -33,5 +33,5 @@ class LessonStudentLine(models.Model):
 
     _sql_constraints = [
         ('unique_task_partner', 'UNIQUE(task_id, partner_id)',
-         'Lo studente è già nella lista presenze di questa lezione.'),
+         'L\'allievo è già nella lista presenze di questa lezione.'),
     ]

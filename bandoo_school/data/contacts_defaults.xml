@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!--
-  Contesto svuotato: l'azione Contatti di Odoo porta `default_is_company: True`
-  e farebbe nascere azienda ogni contatto creato da quel menu (`D-27`).
-
-  Nessun `noupdate`: togliere questo record e aggiornare il modulo deve
-  bastare a riportare l'azione al default di Odoo.
--->
 <odoo>
 
     <record id="contacts.action_contacts" model="ir.actions.act_window">
         <field name="context">{}</field>
+    </record>
+
+    <record id="account.res_partner_action_customer" model="ir.actions.act_window">
+        <field name="context">
+            {
+            'search_default_customer': 1,
+            'res_partner_search_mode': 'customer',
+            'default_customer_rank': 1
+            }
+        </field>
     </record>
 
 </odoo>

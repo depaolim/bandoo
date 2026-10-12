@@ -1,7 +1,7 @@
 {
     'name': 'Bandoo School Sale',
     'version': '18.0.1.6.0',
-    'summary': 'Iscrizioni a corsi, rette e conguaglio per la scuola di musica',
+    'summary': 'Iscrizioni a corsi, rette e consuntivo allievo per la scuola di musica',
     'category': 'Sales',
     'depends': [
         'bandoo_school',
@@ -16,7 +16,9 @@
         'security/ir.model.access.csv',
         'data/export_lists.xml',
         'views/product_template_views.xml',
+        'views/project_project_views.xml',
         'views/sale_order_views.xml',
+        'views/sale_order_line_views.xml',
         'views/enrollment_settlement_views.xml',
     ],
     'author': 'Marco De Paoli',

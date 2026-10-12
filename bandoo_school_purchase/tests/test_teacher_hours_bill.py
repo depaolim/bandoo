@@ -150,3 +150,37 @@ class TestTeacherHoursBill(TransactionCase):
         self._task('L1')
         with self.assertRaises(UserError):
             self._bill()
+
+    def test_ore_liquidate_non_si_cambiano(self):
+        # S-11: l'ordine copia le ore e non le rilegge. Ore, insegnante e
+        # lezione restano ferme finché l'ordine è valido; la data no.
+        ts = self._timesheet(self._task('L1'))
+        po = self._bill()
+        with self.assertRaises(UserError):
+            ts.unit_amount = 2.0
+        sub = self.env['hr.employee'].create({
+            'lastname': 'Supplente', 'firstname': 'Test',
+        })
+        with self.assertRaises(UserError):
+            ts.employee_id = sub
+        with self.assertRaises(UserError):
+            ts.task_id = self._task('L2')
+        with self.assertRaises(UserError):
+            ts.unlink()
+        ts.date = '2026-09-08'
+        self.assertEqual(ts.unit_amount, 1.0)
+        self.assertEqual(ts.x_teacher_bill_line_id.order_id, po)
+
+    def test_ore_liberate_si_cambiano(self):
+        # Annullato l'ordine, o tolta la riga, le ore tornano modificabili.
+        ts = self._timesheet(self._task('L1'))
+        self._bill().button_cancel()
+        ts.unit_amount = 2.0
+        self.assertEqual(ts.unit_amount, 2.0)
+
+        ts2 = self._timesheet(self._task('L2'))
+        po = self._bill()
+        ts2.x_teacher_bill_line_id.unlink()
+        ts2.unlink()
+        self.assertFalse(ts2.exists())
+        self.assertTrue(po.exists())

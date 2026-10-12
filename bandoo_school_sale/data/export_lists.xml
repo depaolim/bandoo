@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  Lista di export dei prodotti-corso, seguito di `bandoo_school/data/export_lists.xml`.
+  Liste di export L2, il catalogo: seguito di `bandoo_school/data/export_lists.xml`.
 
-  Sta qui e non lì perché i campi che descrive li definisce questo modulo:
-  `x_course_project_id` e il tracciamento `course_collective`. `bandoo_school`
+  Stanno qui e non lì perché i campi che descrivono vengono da questo modulo
+  o dalle sue dipendenze (`product`, `sale_project`): `x_lesson_target`,
+  `x_lesson_duration`, `allow_billable`, attributi e listini. `bandoo_school`
   non dipende nemmeno da `product`, e un `ir.exports` non valida né il modello
-  né i nomi dei campi — sono semplici `Char` — quindi la lista nel modulo
+  né i nomi dei campi — sono semplici `Char` — quindi una lista nel modulo
   sbagliato non darebbe errore all'installazione: si romperebbe in silenzio
   all'uso.
+
+  Sono scritte nell'ordine di reimportazione (`CE-03`): ognuna referenzia per
+  ID esterno solo record delle liste precedenti.
 
   Convenzioni comuni (casella "Voglio aggiornare dei dati", `id` per primo,
   niente `noupdate`) spiegate in testata al file di `bandoo_school`.
@@ -15,16 +19,62 @@
 <odoo>
 
     <!--
+      Solo i modelli di corso individuale, archiviati (`S-02`): i corsi veri
+      sono dati dell'anno, non catalogo. `allow_billable` viaggia perché senza
+      un modello non compare in «Modello progetto» del corso a catalogo.
+      Le lezioni previste no: sul modello non contano (`D-35`).
+      Responsabile e fasi restano fuori: si rimettono a mano (`CE-03`).
+    -->
+    <record id="export_l2_project" model="ir.exports">
+        <field name="name">Bandoo · L2 · Modelli di corso individuale</field>
+        <field name="resource">project.project</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'name'}),
+            (0, 0, {'name': 'active'}),
+            (0, 0, {'name': 'allow_timesheets'}),
+            (0, 0, {'name': 'allow_billable'}),
+        ]"/>
+    </record>
+
+    <!--
+      Attributo e valori insieme: una riga CSV per valore, l'attributo solo
+      sulla prima. I valori hanno un ID esterno loro, perché i corsi a
+      catalogo li referenziano uno per uno.
+    -->
+    <record id="export_l2_attribute" model="ir.exports">
+        <field name="name">Bandoo · L2 · Attributi</field>
+        <field name="resource">product.attribute</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'name'}),
+            (0, 0, {'name': 'create_variant'}),
+            (0, 0, {'name': 'display_type'}),
+            (0, 0, {'name': 'value_ids/id'}),
+            (0, 0, {'name': 'value_ids/name'}),
+        ]"/>
+    </record>
+
+    <!--
       `taxes_id` sta nella lista **proprio perché deve restare vuoto**: le
       rette sono fuori campo IVA, e una colonna assente lascerebbe il default
       del 22% ereditato dall'azienda.
 
-      Si carica **dopo** i progetti (`Bandoo · L2 · Progetti-corso`, in
-      `bandoo_school`): `project_template_id` e `x_course_project_id` li
-      referenziano per ID esterno, e un padre mancante fa fallire la riga.
+      Si carica **dopo** modelli e attributi: `project_template_id` e le righe
+      attributo li referenziano per ID esterno, e un riferimento mancante fa
+      fallire la riga. Le righe attributo sono le varianti: una riga CSV per
+      attributo, coi valori separati da virgola.
+
+      Valori, righe attributo e regole di listino portano ciascuno il proprio
+      ID esterno: senza, ricaricare lo stesso file aggiungerebbe righe
+      accanto a quelle esistenti invece di aggiornarle (`CE-03`, identità).
+
+      Lezioni previste e durata devono viaggiare con il corso a catalogo: un
+      individuale senza l'una o l'altra non supera il vincolo, e un collettivo
+      senza lezioni previste non è più un corso (`D-35`).
     -->
     <record id="export_l2_course_product" model="ir.exports">
-        <field name="name">Bandoo · L2 · Prodotti-corso</field>
+        <field name="name">Bandoo · L2 · Corsi a catalogo</field>
         <field name="resource">product.template</field>
         <field name="export_fields" eval="[
             (5, 0, 0),
@@ -34,7 +84,34 @@
             (0, 0, {'name': 'taxes_id'}),
             (0, 0, {'name': 'service_tracking'}),
             (0, 0, {'name': 'project_template_id/id'}),
-            (0, 0, {'name': 'x_course_project_id/id'}),
+            (0, 0, {'name': 'x_lesson_target'}),
+            (0, 0, {'name': 'x_lesson_duration'}),
+            (0, 0, {'name': 'attribute_line_ids/id'}),
+            (0, 0, {'name': 'attribute_line_ids/attribute_id/id'}),
+            (0, 0, {'name': 'attribute_line_ids/value_ids/id'}),
+        ]"/>
+    </record>
+
+    <!--
+      Listino e regole insieme: una riga CSV per regola. Si carica per ultimo,
+      perché le regole referenziano i corsi a catalogo.
+
+      `sequence` viaggia perché decide quale listino Odoo propone sulle
+      iscrizioni nuove: il primo attivo (`CC-07`). Il «Predefinito»
+      archiviato non si esporta: non va selezionato.
+    -->
+    <record id="export_l2_pricelist" model="ir.exports">
+        <field name="name">Bandoo · L2 · Listini</field>
+        <field name="resource">product.pricelist</field>
+        <field name="export_fields" eval="[
+            (5, 0, 0),
+            (0, 0, {'name': 'name'}),
+            (0, 0, {'name': 'sequence'}),
+            (0, 0, {'name': 'item_ids/id'}),
+            (0, 0, {'name': 'item_ids/applied_on'}),
+            (0, 0, {'name': 'item_ids/product_tmpl_id/id'}),
+            (0, 0, {'name': 'item_ids/compute_price'}),
+            (0, 0, {'name': 'item_ids/fixed_price'}),
         ]"/>
     </record>
 

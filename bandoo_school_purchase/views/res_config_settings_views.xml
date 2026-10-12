@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//block[@name='purchase_setting_container']" position="inside">
                 <setting id="bandoo_teacher_hour_product" string="Ore insegnante"
-                         help="Prodotto proposto dal wizard 'Compenso ore insegnante'.">
+                         help="Prodotto proposto dal wizard 'Consuntivo insegnante'.">
                     <field name="teacher_hour_product_id"/>
                 </setting>
             </xpath>

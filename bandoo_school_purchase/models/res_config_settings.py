@@ -9,6 +9,6 @@ class ResConfigSettings(models.TransientModel):
         domain=[('purchase_ok', '=', True)],
         config_parameter='bandoo_school_purchase.teacher_hour_product_id',
         help="Prodotto proposto di default dal wizard "
-             "\"Compenso ore insegnante\". È un prodotto normale: il prezzo "
+             "\"Consuntivo insegnante\". È un prodotto normale: il prezzo "
              "per insegnante si imposta nel suo listino fornitore.",
     )

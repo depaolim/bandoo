@@ -3,25 +3,26 @@ from odoo import api, fields, models, tools
 
 class OrderSettlement(models.Model):
     _name = 'bandoo.order.settlement'
-    _description = 'Conguaglio per ordine'
+    _description = 'Consuntivo allievo per iscrizione'
     _auto = False
     _rec_name = 'order_id'
     _order = 'order_id'
 
     # --- grezzi dalla view SQL (una riga per ordine con righe d'iscrizione) ---
-    order_id = fields.Many2one('sale.order', string='Ordine', readonly=True)
-    total_price = fields.Float(string='Totale ordine', readonly=True)
+    order_id = fields.Many2one('sale.order', string='Iscrizione', readonly=True)
+    partner_id = fields.Many2one('res.partner', string='Allievo', readonly=True)
+    total_price = fields.Float(string='Totale iscrizione', readonly=True)
 
     # --- aritmetica in Python: le rate si calcolano sul totale ordine ---
     deduction = fields.Float(
         string='Detrazione', compute='_compute_amounts',
-        help="Somma delle detrazioni delle righe d'iscrizione dell'ordine.")
+        help="Somma delle detrazioni delle righe dell'iscrizione.")
     installment_1 = fields.Float(string='Rata 1', compute='_compute_amounts')
     installment_2 = fields.Float(string='Rata 2', compute='_compute_amounts')
     installment_3 = fields.Float(
-        string='Rata 3 (conguaglio)', compute='_compute_amounts',
-        help="Totale − rata 1 − rata 2 − detrazione, mai negativa: il "
-             "credito residuo oltre l'ordine è perso.")
+        string='Rata 3', compute='_compute_amounts',
+        help="Totale − rata 1 − rata 2 − detrazione, mai negativa: "
+             "il credito residuo oltre l'iscrizione è perso.")
 
     @api.depends('total_price', 'order_id')
     def _compute_amounts(self):
@@ -45,11 +46,14 @@ class OrderSettlement(models.Model):
             SELECT
                 so.id AS id,
                 so.id AS order_id,
+                so.partner_id AS partner_id,
                 SUM(sol.price_unit) AS total_price
             FROM sale_order_line sol
             JOIN sale_order so ON so.id = sol.order_id
-            WHERE sol.x_project_id IS NOT NULL
+            JOIN product_product pp_line ON pp_line.id = sol.product_id
+            JOIN product_template pt ON pt.id = pp_line.product_tmpl_id
+            WHERE pt.x_lesson_target > 0
               AND so.state = 'sale'
               AND sol.product_uom_qty > 0
-            GROUP BY so.id
+            GROUP BY so.id, so.partner_id
         """)
