@@ -1,9 +1,5 @@
 # Specifica — anagrafica, catalogo, iscrizioni, registro scuola, consuntivazione
 
-Come sono fatti anagrafica, corsi a catalogo, iscrizioni, registro scuola e consuntivazione, e
-cosa succede a ogni passaggio. I **termini** sono quelli di `S-00`. Il documento si legge da
-solo: non serve conoscere nient'altro del progetto.
-
 > ⚠️ **Due funzionalità vanno accese prima di configurare il catalogo**, in
 > `Vendite → Configurazione → Impostazioni`: **Varianti prodotto** e **Listini prezzi**.
 > Senza, i record si creano lo stesso ma restano **invisibili** — niente menu Varianti,
@@ -356,9 +352,3 @@ tariffa sta nel **listino fornitore** del prodotto, una riga per insegnante; sen
 costo del prodotto. Le imposte le decide il regime dell'insegnante.
 
 Le ore messe in ordine non si riprendono; annullando l'ordine tornano liquidabili.
-
----
-
-## Domande alla scuola
-
-- Il solfeggio ha saggi? Se non ha saggi, quante lezioni ha: 28 o 30?
