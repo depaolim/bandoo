@@ -163,7 +163,7 @@ non ne risentono.
 | Fogli ore e **Fatturabile** attivi | senza Fatturabile non compare in «Modello progetto» |
 | **Nessuna lezione** dentro | la copia porta con sé anche i lavori |
 | **Una sola fase**, «Lezione» | il corso individuale eredita le quattro di Odoo come colonne del kanban |
-| **Tempo assegnato vuoto** | se valorizzato si copia tale e quale, e il calcolo di `S-06` salta |
+| **Tempo assegnato**, **Durata lezione**, **Lezioni previste** e **Responsabile** irrilevanti | il corso individuale li riceve dal corso a catalogo, dalla riga di iscrizione e dall'insegnante della riga (`S-03`, `S-06`): quelli del modello non si leggono |
 
 L'ordine conta: prima la fase unica, **poi** l'archiviazione. Un modello archiviato non si
 modifica senza disarchiviarlo, e ogni corso individuale generato da lì in avanti copia le fasi
@@ -189,7 +189,7 @@ riga di iscrizione porta **prodotto + variante**, cioè corso a catalogo e strum
 
 **Dopo la conferma** una riga di iscrizione aggiunta iscrive subito, e una riga portata a
 **quantità zero** è annullata: non iscrive e non entra nel consuntivo allievo. Il prezzo
-concordato è quello della riga: cambiare prodotto o quantità lo ricalcola dal listino.
+concordato è quello della riga.
 
 **Iscrizione a metà anno**: prezzo e lezioni previste della riga si riducono a mano a quelli
 residui; il consuntivo allievo conta su quel numero (`S-09`). Si riducono **prima** di

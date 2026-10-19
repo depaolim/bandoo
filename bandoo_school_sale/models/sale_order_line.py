@@ -1,5 +1,17 @@
+from markupsafe import Markup
+
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools import format_amount
+
+# Campi che decidono il consuntivo allievo o il corso: cambiati a
+# iscrizione confermata, lasciano traccia nel chatter. (Il prodotto
+# no: `sale_project` non lo lascia cambiare su un servizio confermato)
+TRACKED_FIELDS = {
+    'price_unit': 'Prezzo unitario',
+    'x_lesson_target': 'Lezioni previste',
+    'project_id': 'Corso'
+}
 
 
 class SaleOrderLine(models.Model):
@@ -172,13 +184,39 @@ class SaleOrderLine(models.Model):
         return lines
 
     def write(self, vals):
+        tracked = [f for f in TRACKED_FIELDS if f in vals]
+        confirmed = self.filtered(lambda l: l.state == 'sale')
+        before = {line: {f: line[f] for f in tracked} for line in confirmed}
         if not {'project_id', 'product_uom_qty'} & vals.keys():
-            return super().write(vals)
-        # Il corso lasciato si raccoglie prima: dopo la scrittura la riga
-        # punta già a quello nuovo, e il vecchio terrebbe l'allievo.
-        left = self.filtered(lambda l: l.state == 'sale').project_id
-        res = super().write(vals)
-        joined = self.filtered(lambda l: l.state == 'sale').project_id
-        # sudo(): come in sale_order.py, manutenzione del registro scuola
-        (left | joined).sudo().action_align_attendance()
+            res = super().write(vals)
+        else:
+            # Il corso lasciato si raccoglie prima: dopo la scrittura la riga
+            # punta già a quello nuovo, e il vecchio terrebbe l'allievo.
+            left = confirmed.project_id
+            res = super().write(vals)
+            joined = self.filtered(lambda l: l.state == 'sale').project_id
+            # sudo(): come in sale_order.py, manutenzione del registro scuola
+            (left | joined).sudo().action_align_attendance()
+        for line, old in before.items():
+            line._post_tracked_changes(old)
         return res
+
+    def _post_tracked_changes(self, old):
+        """Vecchio → nuovo nel chatter dell'iscrizione, come fa Odoo per la
+        quantità: la riga non ha un chatter suo."""
+        changes = [
+            _('%(field)s: %(old)s → %(new)s', field=TRACKED_FIELDS[f],
+        old=self._format_tracked(f, value),
+        new=self._format_tracked(f, self[f]))
+        for f, value in old.items() if value != self[f]]
+        if changes:
+            self.order_id.message_post(body=Markup('<b>%s</b><br/>%s<br/>%s') % (
+                _('Riga di iscrizione modificata'), self.product_id.display_name,
+                Markup('<br/>').join(changes)))
+
+    def _format_tracked(self, fname, value):
+        if fname == 'price_unit':
+            return format_amount(self.env, value, self.currency_id)
+        if isinstance(value, models.BaseModel):
+            return value.display_name or '—'
+        return str(value)

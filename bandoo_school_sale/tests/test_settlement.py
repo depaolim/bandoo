@@ -1,4 +1,4 @@
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 from odoo.tools.safe_eval import safe_eval
@@ -631,3 +631,53 @@ class TestIndividualCourse(BandooCase):
         self.assertEqual(s.target, 4)
         self.assertEqual(s.lessons_held, 1)
         self.assertEqual(s.missed_lessons, 3)
+
+
+@tagged('standard', 'at_install', 'bandoo')
+class TestLineTracking(BandooCase):
+    """Modifiche alla riga di iscrizione confermata: traccia nel chatter
+    dell'iscrizione, come fa Odoo per la quantità (`S-03`)."""
+
+    def _tracking_bodies(self, order):
+        return [str(m.body) for m in order.message_ids
+                if 'Riga di iscrizione modificata' in str(m.body)]
+
+    def test_lezioni_previste_tracciate(self):
+        self.order.order_line.x_lesson_target = 2
+        bodies = self._tracking_bodies(self.order)
+        self.assertEqual(len(bodies), 1)
+        self.assertIn('Lezioni previste: 4 → 2', bodies[0])
+
+    def test_prezzo_tracciato(self):
+        self.order.order_line.price_unit = 300.0
+        bodies = self._tracking_bodies(self.order)
+        self.assertEqual(len(bodies), 1)
+        self.assertIn('Prezzo unitario:', bodies[0])
+
+    def test_cambio_corso_collettivo_tracciato(self):
+        course_b = self.env['project.project'].create({
+            'name': 'Chitarra B',
+            'x_course_product_id': self.product.product_tmpl_id.id,
+        })
+        self.order.order_line.project_id = course_b
+        bodies = self._tracking_bodies(self.order)
+        self.assertEqual(len(bodies), 1)
+        self.assertIn('Corso: Chitarra → Chitarra B', bodies[0])
+
+    def test_cambio_prodotto_respinto_a_ordine_confermato(self):
+        # Il prodotto non si traccia perché non si cambia: `sale_project`
+        # rende non modificabile il prodotto di un servizio confermato.
+        other = self._course_product(
+            'Corso Violino', self.env['project.project'].create(
+                {'name': 'Violino'}), 500.0)
+        with self.assertRaises(UserError):
+            self.order.order_line.product_id = other
+
+    def test_modifica_in_bozza_non_tracciata(self):
+        draft = self._order(self._partner('Bozza'), [(self.product, 400.0)])
+        draft.order_line.x_lesson_target = 2
+        self.assertFalse(self._tracking_bodies(draft))
+
+    def test_modifica_senza_cambiamenti_non_tracciata(self):
+        self.order.order_line.write({'x_lesson_target': 4, 'name': 'Altro'})
+        self.assertFalse(self._tracking_bodies(self.order))
