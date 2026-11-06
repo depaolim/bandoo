@@ -115,6 +115,52 @@ class TestLessonModel(BandooCase):
         self.assertEqual(order.order_line.product_uom_qty, 0.13)
         self.assertEqual(order.order_line.project_id.allocated_hours, 3.0)
 
+    def test_fatturazione_acconti_detrazione_saldo(self):
+        # Il flusso di `S-12` su Odoo standard: due acconti a importo fisso,
+        # la riga di detrazione dal consuntivo, il saldo uguale alla rata 3.
+        detraction = self.env['product.product'].create({
+            'name': 'Detrazione lezioni non fruite', 'type': 'service',
+            'invoice_policy': 'order', 'taxes_id': [(5,)]})
+        self.assertFalse(detraction.x_is_course)
+        self.instrument.taxes_id = [(5,)]
+        student = self._partner('Fatturata')
+        order = self._order(student, [(self.instrument, 400.0)])
+        order.order_line.x_lesson_target = 4
+        order.action_confirm()
+        project = order.order_line.project_id
+        for n in range(3):
+            self._timesheet(self._task(f'L{n}', project=project))
+
+        def settlement():
+            self.env.flush_all()
+            self.env.invalidate_all()
+            return self.env['bandoo.order.settlement'].search(
+                [('order_id', '=', order.id)])
+
+        def invoice(method, amount=0.0):
+            self.env['sale.advance.payment.inv'].with_context(
+                active_model='sale.order', active_ids=order.ids,
+            ).create({'advance_payment_method': method,
+                      'fixed_amount': amount}).create_invoices()
+            move = order.invoice_ids.filtered(lambda m: m.state == 'draft')
+            move.action_post()
+            return move
+
+        before = settlement()
+        # 52 € per 4 lezioni, 3 erogate: detrazione 13, rate 17 + 17, saldo 5
+        self.assertEqual((before.installment_1, before.deduction_to_invoice,
+                          before.installment_3), (17.0, 13.0, 5.0))
+        invoice('fixed', before.installment_1)
+        invoice('fixed', before.installment_2)
+        order.write({'order_line': [(0, 0, {
+            'product_id': detraction.id, 'product_uom_qty': 1,
+            'price_unit': -before.deduction_to_invoice})]})
+        # La riga di detrazione non è un corso: il consuntivo non la vede.
+        self.assertEqual(settlement().deduction_to_invoice, 13.0)
+        balance = invoice('delivered')
+        self.assertEqual(balance.amount_total, before.installment_3)
+        self.assertEqual(order.invoice_status, 'invoiced')
+
     def test_previste_della_view_come_della_riga(self):
         # La stessa formula vive in Python e nella view SQL: devono
         # coincidere anche sulle frazioni scomode.

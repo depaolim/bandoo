@@ -245,6 +245,9 @@ class TestSettlementIntegration(BandooCase):
         # max(0, 520 - 346 - 200) = 0: il credito dello strumento assorbe
         # il solfeggio, il residuo (26) e' perso.
         self.assertEqual(order_settlement.installment_3, 0.0)
+        # La riga di detrazione da fatturare non supera il residuo dopo gli
+        # acconti: 520 - 173 - 173 = 174, non 200 (`S-12`).
+        self.assertEqual(order_settlement.deduction_to_invoice, 174.0)
 
     def test_ordini_distinti_non_si_compensano(self):
         # Il credito di un ordine non abbatte la rata 3 di un altro ordine.
@@ -273,6 +276,7 @@ class TestSettlementIntegration(BandooCase):
         # ...ma non abbatte la rata 3 dell'altro ordine.
         self.assertEqual(s2.deduction, 0.0)
         self.assertEqual(s2.installment_3, 134.0)  # 400 - 266 - 0
+        self.assertEqual(s2.deduction_to_invoice, 0.0)
 
     def test_rate_ordine_arrotondate_sul_totale(self):
         # Le rate 1/2 dell'ordine sono round(totale/3), non la somma delle

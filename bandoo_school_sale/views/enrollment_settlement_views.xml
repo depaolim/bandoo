@@ -99,6 +99,7 @@
                 <field name="installment_1" sum="Totale"/>
                 <field name="installment_2" sum="Totale"/>
                 <field name="installment_3" sum="Totale"/>
+                <field name="deduction_to_invoice" sum="Totale"/>
             </list>
         </field>
     </record>
@@ -120,6 +121,7 @@
                             <field name="installment_1"/>
                             <field name="installment_2"/>
                             <field name="installment_3"/>
+                            <field name="deduction_to_invoice"/>
                         </group>
                     </group>
                 </sheet>

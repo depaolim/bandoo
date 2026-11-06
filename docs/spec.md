@@ -86,8 +86,9 @@ consuntivazione e ordini ore insegnante stanno accanto al registro scuola e non 
 | Listino | Listino prezzi | `product.pricelist` | Insieme di regole di prezzo, differenziabili per categoria di corso a catalogo. | — |
 | Iscrizione | Ordine di vendita | `sale.order` | Atto con cui un allievo si iscrive a uno o più corsi a catalogo per un anno scolastico, a un prezzo fissato. | Contratto, Ordine cliente |
 | Riga di iscrizione | Riga ordine di vendita | `sale.order.line` | Singolo corso a catalogo incluso in un'iscrizione. | — |
-| Rata | *(da definire)* | *(da definire)* | Ciascuna delle tre quote in cui l'allievo paga il prezzo fissato nell'iscrizione: rata 1 e rata 2, di importo fisso, e rata 3. | — |
-| Rata 3 | *(da definire)* | *(da definire)* | Ultima rata, il cui importo risulta dal consuntivo allievo: si riduce in base alle lezioni non fruite. In ambito contabile è il saldo. | Conguaglio, Terza rata; Saldo (ammesso solo come nome contabile interno) |
+| Rata | Fattura (rata 1 e rata 2: «Anticipo») | `account.move` | Ciascuna delle tre quote in cui l'allievo paga il prezzo fissato nell'iscrizione: rata 1 e rata 2, di importo fisso, fatturate come acconti, e rata 3 (`S-12`). | — |
+| Rata 3 | Fattura | `account.move` | Ultima rata, il cui importo risulta dal consuntivo allievo: si riduce in base alle lezioni non fruite. È la fattura che chiude l'iscrizione; in ambito contabile è il saldo. | Conguaglio, Terza rata; Saldo (ammesso solo come nome contabile interno) |
+| Detrazione lezioni non fruite | Prodotto / riga ordine di vendita | `product.product`, `sale.order.line` | Riga negativa sull'iscrizione, una per iscrizione, che porta nel saldo la detrazione del consuntivo allievo (`S-12`). | — |
 
 ### Consuntivazione (ponte tra registro scuola, vendite e acquisti)
 
@@ -362,6 +363,41 @@ rendicontate chi non è iscritto al corso.
 **Per iscrizione** valgono le stesse rate sul totale, con la somma delle detrazioni; la rata
 3 **non scende sotto zero**: un credito oltre l'iscrizione è perso. Sono queste le rate
 dovute. Entrambi i consuntivi sono calcolati all'apertura, non memorizzati.
+
+---
+
+## S-12 · Fatturazione dell'iscrizione
+
+L'iscrizione si fattura in **tre fatture**, coi flussi standard di Odoo: due **acconti** per
+rata 1 e rata 2, e il **saldo** per la rata 3 (`S-09`).
+
+| Quando | Cosa fa il segretario | Risultato |
+|---|---|---|
+| Rata 1, rata 2 | `Crea fattura → Acconto (importo fisso)`, con l'importo della rata letto dal consuntivo per iscrizione | una fattura «Anticipo» per rata |
+| Fine anno, dopo il consuntivo | aggiunge all'iscrizione confermata **una** riga «Detrazione lezioni non fruite», quantità 1, prezzo = − **Detrazione da fatturare** del consuntivo per iscrizione | il totale dell'iscrizione scende della detrazione |
+| Saldo | `Crea fattura → Fattura normale` | la fattura vale la rata 3: righe dei corsi, meno la detrazione, meno gli acconti |
+
+**Detrazione da fatturare** = totale − rata 1 − rata 2 − rata 3: la detrazione, ma non oltre
+quanto resta dopo gli acconti. Così il saldo non scende sotto zero e vale esattamente la rata
+3. Con detrazione 476,19 su un'iscrizione da 520 con acconti 173 + 173, la riga vale −174.
+
+**Una riga per iscrizione**, non una per corso: il limite vale sull'iscrizione intera. Finché il
+saldo non è emesso, a un nuovo consuntivo la riga si corregge riscrivendone il prezzo, senza
+aggiungerne un'altra.
+
+Il prodotto **«Detrazione lezioni non fruite»** si crea una volta: servizio, unità di misura
+Unità, politica di fatturazione «Prezzo fisso/prepagato» (si fattura la quantità ordinata), senza imposte, «Crea un ordine» = Nulla, **senza
+quota**. Non è un corso a catalogo, e i consuntivi non lo vedono: la riga negativa non cambia
+detrazione né rate.
+
+Il saldo si emette **sempre**, anche quando la rata 3 è 0: è la fattura che chiude
+l'iscrizione.
+
+Le righe dei corsi si fatturano sulla **quantità ordinata** (prepagato, `S-01`): i fogli ore
+degli insegnanti non toccano le fatture delle famiglie. Odoo conta come fatturate anche le
+fatture in bozza.
+
+*(da definire)*: il momento di emissione delle fatture per le prestazioni di servizi.
 
 ---
 

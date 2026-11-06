@@ -23,6 +23,12 @@ class OrderSettlement(models.Model):
         string='Rata 3', compute='_compute_amounts',
         help="Totale − rata 1 − rata 2 − detrazione, mai negativa: "
              "il credito residuo oltre l'iscrizione è perso.")
+    deduction_to_invoice = fields.Float(
+        string='Detrazione da fatturare', compute='_compute_amounts',
+        help="Importo della riga «Detrazione lezioni non fruite» da mettere "
+             "sull'iscrizione prima del saldo (`S-12`): la detrazione, ma non "
+             "oltre quanto resta dopo le due rate di acconto, così che il "
+             "saldo valga la rata 3.")
 
     @api.depends('total_price', 'order_id')
     def _compute_amounts(self):
@@ -38,6 +44,9 @@ class OrderSettlement(models.Model):
                 0.0,
                 total - rec.installment_1 - rec.installment_2 - rec.deduction,
             )
+            rec.deduction_to_invoice = (
+                total - rec.installment_1 - rec.installment_2
+                - rec.installment_3)
 
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
