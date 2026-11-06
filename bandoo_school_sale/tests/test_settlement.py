@@ -76,9 +76,7 @@ class BandooCase(TransactionCase):
 
     def setUp(self):
         super().setUp()
-        self.course = self.env['project.project'].create({
-            'name': 'Chitarra', 'x_lesson_target': 4,
-        })
+        self.course = self.env['project.project'].create({'name': 'Chitarra'})
         self.product = self._course_product('Corso Chitarra', self.course, 400.0)
         self.student = self._partner('Allievo')
         # Il genitore è un contatto associato dentro la scheda dello studente.
@@ -98,30 +96,47 @@ class BandooCase(TransactionCase):
         return self.env['res.partner'].create(
             {'lastname': lastname, 'firstname': firstname, **vals})
 
+    def _year_uom(self, hours):
+        """Unità annua da `hours` ore, come quelle di `data/uom_data.xml`:
+        i test usano anni brevi, per contare poche lezioni."""
+        return self.env['uom.uom'].create({
+            'name': f'Anno di prova {hours} h',
+            'category_id': self.env.ref('uom.uom_categ_wtime').id,
+            'uom_type': 'bigger', 'factor': 1 / hours,
+        })
+
     def _course_product(self, name, project, price, target=4):
-        """Corso a catalogo collettivo («Crea un ordine» = Nulla, lezioni
-        previste) e il suo corso collettivo (`D-35`)."""
+        """Corso a catalogo collettivo («Crea un ordine» = Nulla, quota 15′,
+        un anno da `target` lezioni) e il suo corso collettivo da 60′
+        (`D-35`)."""
+        uom = self._year_uom(target * 15 / 60)
         product = self.env['product.product'].create({
             'name': name, 'type': 'service', 'list_price': price,
-            'service_tracking': 'no', 'x_lesson_target': target,
+            'service_tracking': 'no', 'x_lesson_duration': 15,
+            'uom_id': uom.id, 'uom_po_id': uom.id,
         })
-        project.x_course_product_id = product.product_tmpl_id
+        project.write({'x_course_product_id': product.product_tmpl_id.id,
+                       'x_lesson_duration': 60})
         return product
 
     def _order(self, student, product_prices):
         """Iscrizione = ordine standard: l'allievo è l'intestatario. Le righe
         collettive nascono già assegnate al corso del loro corso a catalogo,
-        come quando la segreteria lo indica all'iscrizione."""
+        come quando la segreteria lo indica all'iscrizione.
+
+        Ogni riga è (corso a catalogo, prezzo annuo), o con una terza voce la
+        quantità: una frazione d'anno per le iscrizioni a metà anno."""
         Project = self.env['project.project']
         return self.env['sale.order'].create({
             'partner_id': student.id,
             'order_line': [
                 (0, 0, {'product_id': product.id,
-                        'price_unit': price, 'product_uom_qty': 1.0,
+                        'price_unit': price, 'product_uom_qty': qty,
                         'project_id': Project.search([(
                             'x_course_product_id', '=',
                             product.product_tmpl_id.id)], limit=1).id})
-                for product, price in product_prices
+                for product, price, qty in (
+                    (*row, 1.0)[:3] for row in product_prices)
             ],
         })
 
@@ -196,9 +211,7 @@ class TestSettlementIntegration(BandooCase):
     def test_ordine_due_righe_aggregato(self):
         # Il credito dello strumento (2 giustificate) abbatte la rata 3 del
         # solfeggio nello stesso ordine.
-        solfeggio = self.env['project.project'].create({
-            'name': 'Solfeggio', 'x_lesson_target': 4,
-        })
+        solfeggio = self.env['project.project'].create({'name': 'Solfeggio'})
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         student = self._partner('Allievo2')
         order = self._order(student, [
@@ -291,10 +304,11 @@ class TestSettlementIntegration(BandooCase):
         for n in range(4):
             self._timesheet(self._task(f'L{n}'))
         late = self._partner('Tardivo')
-        order = self._order(late, [(self.product, 100.0)])
-        # Proposta dal corso (4), ridotta alle lezioni pattuite residue.
-        self.assertEqual(order.order_line.x_lesson_target, 4)
-        order.order_line.x_lesson_target = 1
+        # Un quarto d'anno al prezzo annuo: prezzo e lezioni previste
+        # scalano insieme con la quantità (100 €, 1 lezione su 4).
+        order = self._order(late, [(self.product, 400.0, 0.25)])
+        self.assertEqual(order.order_line.x_lesson_target, 1)
+        self.assertEqual(order.order_line.price_subtotal, 100.0)
         order.action_confirm()
 
         # Nessuna lezione erogata all'iscritto (quelle pre-iscrizione non
@@ -353,8 +367,7 @@ class TestEnrollmentFlow(BandooCase):
         # 'sale' senza passare da action_confirm: l'iscrizione dell'intestatario
         # al nuovo corso deve scattare comunque (buco emerso dal test manuale
         # 2026-07-10). Un ordine = un allievo, più corsi.
-        solfeggio = self.env['project.project'].create({
-            'name': 'Solfeggio', 'x_lesson_target': 4})
+        solfeggio = self.env['project.project'].create({'name': 'Solfeggio'})
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         self.order.write({'order_line': [(0, 0, {
             'product_id': solfeggio_product.id, 'project_id': solfeggio.id,
@@ -363,7 +376,8 @@ class TestEnrollmentFlow(BandooCase):
         self.assertIn(self.student, solfeggio.enrolled_student_ids)
 
     def test_durata_scende_su_registro_e_lezioni(self):
-        """La durata dell'articolo diventa Tempo assegnato sulle lezioni.
+        """La quota del corso a catalogo diventa Tempo assegnato sulle
+        lezioni, e l'unità annua il monte ore del corso.
 
         Senza, le ore registrate dall'insegnante non hanno un termine di
         confronto e il compenso si fonda su un numero non verificabile.
@@ -372,19 +386,23 @@ class TestEnrollmentFlow(BandooCase):
             'name': 'Template Prova', 'allow_timesheets': True,
             'allow_billable': True,
         })
+        year_45 = self.env.ref('bandoo_school_sale.uom_year_45')
         product = self.env['product.product'].create({
             'name': 'Corso Individuale Prova', 'type': 'service',
             'list_price': 600.0, 'service_tracking': 'project_only',
             'project_template_id': template.id, 'x_lesson_duration': 45,
-            'x_lesson_target': 30,
+            'uom_id': year_45.id, 'uom_po_id': year_45.id,
         })
         order = self._order(self.student, [(product, 600.0)])
         order.action_confirm()
         registro = order.order_line.project_id
 
-        self.assertEqual(registro.x_lesson_duration, 45)
-        # 30 lezioni previste da 45 minuti = 22,5 ore d'anno
+        # Nessuna copia sul corso: la durata la legge dalla riga.
+        self.assertFalse(registro.x_lesson_duration)
+        self.assertEqual(registro._get_lesson_duration(), 45)
+        # Un Anno 45′ = 22,5 ore, convertite da `sale_timesheet`
         self.assertAlmostEqual(registro.allocated_hours, 22.5)
+        self.assertEqual(registro._get_lesson_target(), 30)
 
         # vale anche per una lezione aggiunta a mano: e' il caso dei saggi
         lezione = self.env['project.task'].create(
@@ -428,8 +446,7 @@ class TestEnrollmentFlow(BandooCase):
         # Su ordine confermato le righe non si eliminano: la convenzione
         # Odoo è quantità 0. La riga azzerata non deve iscrivere né contare
         # nei conguagli (buco emerso dal test manuale 2026-07-10).
-        solfeggio = self.env['project.project'].create({
-            'name': 'Solfeggio', 'x_lesson_target': 4})
+        solfeggio = self.env['project.project'].create({'name': 'Solfeggio'})
         solfeggio_product = self._course_product('Solfeggio', solfeggio, 120.0)
         self.order.write({'order_line': [(0, 0, {
             'product_id': solfeggio_product.id, 'project_id': solfeggio.id,
@@ -483,14 +500,20 @@ class TestEnrollmentFlow(BandooCase):
         self.assertEqual(len(task.attendance_line_ids), 1)
 
     def test_constraint_individuale_malconfigurato(self):
-        # Un corso a catalogo individuale vuole modello, durata e lezioni
-        # previste (`D-34`).
+        # Un corso a catalogo individuale vuole modello e quota (`D-34`).
+        year_45 = self.env.ref('bandoo_school_sale.uom_year_45')
         with self.assertRaises(ValidationError), self.cr.savepoint():
             self.env['product.product'].create({
                 'name': 'Corso rotto', 'type': 'service',
-                'service_tracking': 'project_only', 'x_lesson_target': 4,
+                'service_tracking': 'project_only', 'x_lesson_duration': 45,
+                'uom_id': year_45.id, 'uom_po_id': year_45.id,
             })
-
+        with self.assertRaises(ValidationError), self.cr.savepoint():
+            self.env['product.product'].create({
+                'name': 'Corso senza quota', 'type': 'service',
+                'service_tracking': 'project_only',
+                'project_template_id': self.course.id,
+            })
 
 
 @tagged('standard', 'at_install', 'bandoo')
@@ -503,6 +526,7 @@ class TestCollectiveCourses(BandooCase):
         self.course_b = self.env['project.project'].create({
             'name': 'Chitarra B',
             'x_course_product_id': self.product.product_tmpl_id.id,
+            'x_lesson_duration': 45,
         })
 
     def test_cambio_corso_collettivo(self):
@@ -590,11 +614,13 @@ class TestIndividualCourse(BandooCase):
         self.template = self.env['project.project'].create({
             'name': 'Template Pianoforte', 'active': False,
         })
+        # Un anno breve: 4 lezioni da 45′ = 3 ore.
+        uom = self._year_uom(3.0)
         self.piano = self.env['product.product'].create({
             'name': 'Lezioni Pianoforte', 'type': 'service',
             'list_price': 400.0, 'service_tracking': 'project_only',
             'project_template_id': self.template.id,
-            'x_lesson_target': 4, 'x_lesson_duration': 45,
+            'x_lesson_duration': 45, 'uom_id': uom.id, 'uom_po_id': uom.id,
         })
 
     def test_individuale_end_to_end(self):
@@ -602,13 +628,14 @@ class TestIndividualCourse(BandooCase):
         order.action_confirm()
         line = order.order_line
 
-        # Corso generato dal modello: attivo, lezioni previste copiate dalla
+        # Corso generato dal modello: attivo, lezioni previste lette dalla
         # riga, zero lezioni fantasma; la riga lo aggancia via project_id.
         project = line.project_id
         self.assertTrue(project)
         self.assertNotEqual(project, self.template)
         self.assertTrue(project.active)
-        self.assertEqual(project.x_lesson_target, 4)
+        self.assertEqual(project._get_lesson_target(), 4)
+        self.assertAlmostEqual(project.allocated_hours, 3.0)
         self.assertFalse(project.tasks)
         # `Allievo Test` è `res.partner.name` ricomposto da partner_firstname
         # nell'ordine `Cognome Nome` deciso in D-21: il letterale vale anche da
@@ -625,6 +652,7 @@ class TestIndividualCourse(BandooCase):
         # Lezione generata -> presenze del solo studente; conguaglio ok.
         task = self._task('L1', project=project)
         self.assertEqual(task.attendance_line_ids.partner_id, self.student)
+        self.assertAlmostEqual(task.allocated_hours, 0.75)
         self._timesheet(task)
         s = self._settlements(self.student).filtered(
             lambda s: s.project_id == project)
@@ -642,11 +670,12 @@ class TestLineTracking(BandooCase):
         return [str(m.body) for m in order.message_ids
                 if 'Riga di iscrizione modificata' in str(m.body)]
 
-    def test_lezioni_previste_tracciate(self):
-        self.order.order_line.x_lesson_target = 2
-        bodies = self._tracking_bodies(self.order)
-        self.assertEqual(len(bodies), 1)
-        self.assertIn('Lezioni previste: 4 → 2', bodies[0])
+    def test_lezioni_previste_dalla_quantita(self):
+        # Le previste seguono la quantità, che Odoo traccia da sé: nessun
+        # messaggio nostro in più.
+        self.order.order_line.product_uom_qty = 0.5
+        self.assertEqual(self.order.order_line.x_lesson_target, 2)
+        self.assertFalse(self._tracking_bodies(self.order))
 
     def test_prezzo_tracciato(self):
         self.order.order_line.price_unit = 300.0
@@ -658,6 +687,7 @@ class TestLineTracking(BandooCase):
         course_b = self.env['project.project'].create({
             'name': 'Chitarra B',
             'x_course_product_id': self.product.product_tmpl_id.id,
+            'x_lesson_duration': 45,
         })
         self.order.order_line.project_id = course_b
         bodies = self._tracking_bodies(self.order)
@@ -675,9 +705,9 @@ class TestLineTracking(BandooCase):
 
     def test_modifica_in_bozza_non_tracciata(self):
         draft = self._order(self._partner('Bozza'), [(self.product, 400.0)])
-        draft.order_line.x_lesson_target = 2
+        draft.order_line.price_unit = 300.0
         self.assertFalse(self._tracking_bodies(draft))
 
     def test_modifica_senza_cambiamenti_non_tracciata(self):
-        self.order.order_line.write({'x_lesson_target': 4, 'name': 'Altro'})
+        self.order.order_line.write({'price_unit': 400.0, 'name': 'Altro'})
         self.assertFalse(self._tracking_bodies(self.order))

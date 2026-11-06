@@ -3,7 +3,7 @@
   Liste di export L2, il catalogo: seguito di `bandoo_school/data/export_lists.xml`.
 
   Stanno qui e non lì perché i campi che descrivono vengono da questo modulo
-  o dalle sue dipendenze (`product`, `sale_project`): `x_lesson_target`,
+  o dalle sue dipendenze (`product`, `sale_project`): unità di misura annua,
   `x_lesson_duration`, `allow_billable`, attributi e listini. `bandoo_school`
   non dipende nemmeno da `product`, e un `ir.exports` non valida né il modello
   né i nomi dei campi — sono semplici `Char` — quindi una lista nel modulo
@@ -84,7 +84,7 @@
             (0, 0, {'name': 'taxes_id'}),
             (0, 0, {'name': 'service_tracking'}),
             (0, 0, {'name': 'project_template_id/id'}),
-            (0, 0, {'name': 'x_lesson_target'}),
+            (0, 0, {'name': 'uom_id/id'}),
             (0, 0, {'name': 'x_lesson_duration'}),
             (0, 0, {'name': 'attribute_line_ids/id'}),
             (0, 0, {'name': 'attribute_line_ids/attribute_id/id'}),

@@ -13,13 +13,15 @@ class EnrollmentSettlement(models.Model):
     order_id = fields.Many2one('sale.order', string='Iscrizione', readonly=True)
     partner_id = fields.Many2one('res.partner', string='Allievo', readonly=True)
     project_id = fields.Many2one('project.project', string='Corso', readonly=True)
-    annual_price = fields.Float(string='Prezzo annuo (P)', readonly=True)
+    annual_price = fields.Float(
+        string='Prezzo annuo (P)', readonly=True,
+        help='Subtotale della riga: prezzo unitario per quantità, che per '
+             "un'iscrizione a metà anno è una frazione d'anno.")
     target = fields.Integer(
         string='Lezioni previste', readonly=True,
-        help='Dalla riga di iscrizione (proposte dal corso a catalogo, '
-             'ridotte per le iscrizioni a metà anno). Lezioni ordinarie e '
-             'saggi: la quota le copre tutte, ed è su questo numero che si '
-             'divide.')
+        help='Dalla riga di iscrizione: le ore della quantità divise per la '
+             'quota del corso a catalogo. Lezioni ordinarie e saggi: il '
+             'prezzo le copre tutte, ed è su questo numero che si divide.')
     lessons_held = fields.Integer(
         string='Lezioni erogate', readonly=True,
         help='Lezioni rendicontate in cui l\'allievo era in elenco presenze, '
@@ -77,8 +79,11 @@ class EnrollmentSettlement(models.Model):
                 sol.order_id AS order_id,
                 so.partner_id AS partner_id,
                 sol.project_id AS project_id,
-                sol.price_unit AS annual_price,
-                sol.x_lesson_target AS target,
+                sol.price_subtotal AS annual_price,
+                -- Lezioni previste come `product.template._x_lessons_in`:
+                -- ore della quantità divise per la quota, all'intero.
+                ROUND(sol.product_uom_qty / uom_line.factor * uom_hour.factor
+                      * 60 / pt.x_lesson_duration)::integer AS target,
                 (SELECT count(*)
                    FROM project_task t
                   WHERE t.project_id IN (
@@ -105,7 +110,11 @@ class EnrollmentSettlement(models.Model):
             JOIN sale_order so ON so.id = sol.order_id
             JOIN product_product pp_line ON pp_line.id = sol.product_id
             JOIN product_template pt ON pt.id = pp_line.product_tmpl_id
-            WHERE pt.x_lesson_target > 0
+            JOIN uom_uom uom_line ON uom_line.id = sol.product_uom
+            JOIN ir_model_data imd_hour
+              ON imd_hour.module = 'uom' AND imd_hour.name = 'product_uom_hour'
+            JOIN uom_uom uom_hour ON uom_hour.id = imd_hour.res_id
+            WHERE pt.x_lesson_duration > 0
               AND so.state = 'sale'
               AND sol.product_uom_qty > 0
         """)

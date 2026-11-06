@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.tools import format_date
 
 
 class ProjectTask(models.Model):
@@ -21,6 +22,25 @@ class ProjectTask(models.Model):
         for task in self:
             task.x_is_held = bool(task.timesheet_ids)
 
+    @api.depends('date_deadline')
+    @api.depends_context('tz', 'lang')
+    def _compute_display_name(self):
+        """La lezione si riconosce dalla data: «Lezione 08/12/2026».
+
+        Il nome salvato resta «Lezione» o «Saggio»: una data scritta nel nome
+        resterebbe quella vecchia dopo uno spostamento. Va subito dopo il nome,
+        prima di quanto `hr_timesheet` può accodare (le ore rimanenti).
+        """
+        super()._compute_display_name()
+        for task in self:
+            if not (task.project_id and task.date_deadline and task.name):
+                continue
+            day = format_date(self.env, fields.Datetime.context_timestamp(
+                task, task.date_deadline))
+            if task.display_name.startswith(task.name):
+                task.display_name = '%s %s%s' % (
+                    task.name, day, task.display_name[len(task.name):])
+
     def _search_x_is_held(self, operator, value):
         held = (operator == '=') == bool(value)
         return [('timesheet_ids', '!=' if held else '=', False)]
@@ -32,8 +52,14 @@ class ProjectTask(models.Model):
             # Ore attese dalla durata del corso: vale sia per le lezioni
             # generate dal wizard sia per quelle aggiunte a mano, i saggi
             # compresi. Un valore esplicito in creazione vince.
-            if not task.allocated_hours and task.project_id.x_lesson_duration:
-                task.allocated_hours = task.project_id.x_lesson_duration / 60.0
+            duration = task.project_id and task.project_id._get_lesson_duration()
+            if not task.allocated_hours and duration:
+                task.allocated_hours = duration / 60.0
+            # Insegnante dal responsabile del corso, per le generate come per
+            # quelle aggiunte a mano. Un'assegnazione esplicita vince: è il
+            # caso del supplente.
+            if not task.user_ids and task.project_id.user_id:
+                task.user_ids = task.project_id.user_id
             students = (
                 task.project_id._get_enrolled_students()
                 if task.project_id else self.env['res.partner']

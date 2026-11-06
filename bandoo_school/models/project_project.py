@@ -4,23 +4,15 @@ from odoo import api, fields, models
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    # Durata della singola lezione, in minuti. La portano le lezioni come
-    # "Tempo assegnato" (allocated_hours, in ore): e' l'unico termine di
-    # confronto delle ore che l'insegnante registra, e su cui si fonda il
-    # compenso.
+    # Durata della lezione del gruppo, in minuti: vale per i corsi con più
+    # allievi, che la decidono alla pianificazione (`S-08`). La portano le
+    # lezioni come "Tempo assegnato" (allocated_hours, in ore): e' l'unico
+    # termine di confronto delle ore che l'insegnante registra, e su cui si
+    # fonda il compenso.
     x_lesson_duration = fields.Integer(
         string='Durata lezione (minuti)',
         help='Durata di una lezione di questo corso. Ogni lezione nuova nasce '
              'con il Tempo assegnato corrispondente.')
-    # Lezioni previste: le lezioni ordinarie più i saggi, che sono lezioni a
-    # tutti gli effetti (fogli ore, presenze, ore insegnante) e rientrano nel
-    # prezzo annuale. È il numero su cui il consuntivo allievo divide il
-    # prezzo. Nessun default: un numero che nessuno ha scelto non va proposto.
-    x_lesson_target = fields.Integer(
-        string='Lezioni previste',
-        help='Lezioni coperte dalla quota annua: le lezioni ordinarie '
-             'piu\' i saggi. Il wizard ne propone di meno da generare, '
-             'perche\' la data dei saggi si sa solo dopo.')
     enrolled_student_ids = fields.Many2many(
         'res.partner', string='Allievi iscritti',
         compute='_compute_enrolled_student_ids',
@@ -41,6 +33,28 @@ class ProjectProject(models.Model):
         """
         self.ensure_one()
         return self.env['res.partner']
+
+    def _get_lesson_duration(self):
+        """Durata di una lezione del corso, in minuti.
+
+        Base: quella scritta sul corso. I moduli a valle la ricavano da dove
+        sta davvero, per esempio dal corso a catalogo della riga d'ordine.
+        """
+        self.ensure_one()
+        return self.x_lesson_duration
+
+    def _get_lesson_target(self):
+        """Lezioni previste del corso, saggi compresi: 0 se non si sanno.
+
+        Base: nessuna fonte. Le ricava chi conosce la vendita.
+        """
+        self.ensure_one()
+        return 0
+
+    def _get_recital_count(self):
+        """Saggi da escludere dalle lezioni da generare. Base: nessuno."""
+        self.ensure_one()
+        return 0
 
     def _compute_enrolled_student_ids(self):
         for project in self:

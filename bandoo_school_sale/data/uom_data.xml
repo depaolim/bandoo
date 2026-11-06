@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Unità di misura annue dei corsi a catalogo, nella categoria Orario
+  lavorativo: è l'unica in cui `sale_timesheet` converte la quantità della
+  riga nel monte ore del corso generato. Il rapporto di ognuna è "quante ore
+  vale un anno", e le lezioni previste sono quelle ore divise per la quota.
+
+  Il riferimento della categoria passa da Giorni a Ore, perché ogni rapporto
+  si legga come ore: con Giorni l'Anno 30′ varrebbe 1,875, e il solfeggio
+  8/7 periodico, che digitato troncato fa uscire 7,01 ore invece di 7.
+  L'ordine dei tre record conta: il controllo "un solo riferimento per
+  categoria" non scatta sulla scrittura che imposta `reference`
+  (`uom/models/uom_uom.py`, `write`), quindi prima Ore diventa riferimento,
+  poi Giorni smette di esserlo. Le equivalenze non cambiano (1 giorno = 8
+  ore), cambia solo come sono scritti i fattori.
+-->
+<odoo>
+
+    <record id="uom.product_uom_hour" model="uom.uom">
+        <field name="uom_type">reference</field>
+        <field name="factor" eval="1.0"/>
+    </record>
+    <record id="uom.product_uom_day" model="uom.uom">
+        <field name="uom_type">bigger</field>
+        <field name="factor" eval="1 / 8.0"/>
+    </record>
+    <record id="uom.product_uom_minute" model="uom.uom">
+        <field name="uom_type">smaller</field>
+        <field name="factor" eval="60.0"/>
+    </record>
+
+    <!-- 30 lezioni l'anno, saggi compresi (`S-05`), alla quota del nome. -->
+    <record id="uom_year_30" model="uom.uom">
+        <field name="name">Anno 30′</field>
+        <field name="category_id" ref="uom.uom_categ_wtime"/>
+        <field name="uom_type">bigger</field>
+        <field name="factor" eval="1 / 15.0"/>
+    </record>
+    <record id="uom_year_45" model="uom.uom">
+        <field name="name">Anno 45′</field>
+        <field name="category_id" ref="uom.uom_categ_wtime"/>
+        <field name="uom_type">bigger</field>
+        <field name="factor" eval="1 / 22.5"/>
+    </record>
+    <record id="uom_year_60" model="uom.uom">
+        <field name="name">Anno 60′</field>
+        <field name="category_id" ref="uom.uom_categ_wtime"/>
+        <field name="uom_type">bigger</field>
+        <field name="factor" eval="1 / 30.0"/>
+    </record>
+    <!-- 28 lezioni da 15′ per allievo, nessun saggio. -->
+    <record id="uom_year_theory" model="uom.uom">
+        <field name="name">Anno solfeggio</field>
+        <field name="category_id" ref="uom.uom_categ_wtime"/>
+        <field name="uom_type">bigger</field>
+        <field name="factor" eval="1 / 7.0"/>
+    </record>
+
+</odoo>

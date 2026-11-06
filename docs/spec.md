@@ -80,7 +80,9 @@ consuntivazione e ordini ore insegnante stanno accanto al registro scuola e non 
 | Corso a catalogo collettivo | Prodotto | `product.template` | Corso a catalogo la cui vendita non genera un corso. Il segretario assegna l'allievo a un corso collettivo esistente. | — |
 | Strumento | Valore (attributo «Strumento») | `product.attribute.value` | Strumento specifico insegnato (es. tuba, corno, sax, batteria, pianoforte, chitarra). | — |
 | Variante di corso a catalogo | Variante prodotto | `product.product` | Corso a catalogo di strumento per uno strumento specifico. È ciò che si vende nella riga di iscrizione. | Variante di corso |
-| Lezioni previste *(da confermare)* | Lezioni previste | — | Numero di lezioni, saggi compresi, incluse nel prezzo annuale di un corso a catalogo (tipicamente 28 lezioni ordinarie + 2 saggi). | Appuntamenti previsti |
+| Lezioni previste *(da confermare)* | Lezioni previste | — | Numero di lezioni, saggi compresi, incluse nel prezzo di una riga di iscrizione: le ore della quantità divise per la quota. Per un anno intero 28 lezioni ordinarie + 2 saggi sullo strumento, 28 lezioni sul solfeggio. Sulla riga si possono scrivere: la quantità ne discende. | Appuntamenti previsti |
+| Quota | Quota (minuti per allievo) | `product.template` | Minuti di insegnante per allievo per lezione: la durata della lezione nei corsi individuali (30′, 45′, 60′), la parte di ciascun allievo nei collettivi (15′). | Durata (sul corso a catalogo) |
+| Unità di misura annua | Unità di misura | `uom.uom`, categoria Orario lavorativo | Un anno di un corso a catalogo, espresso in ore: «Anno 45′» vale 22,5 ore, cioè 30 lezioni da 45′. La quantità della riga di iscrizione è in anni: 1 per l'anno intero, una frazione per un'iscrizione a metà anno. | — |
 | Listino | Listino prezzi | `product.pricelist` | Insieme di regole di prezzo, differenziabili per categoria di corso a catalogo. | — |
 | Iscrizione | Ordine di vendita | `sale.order` | Atto con cui un allievo si iscrive a uno o più corsi a catalogo per un anno scolastico, a un prezzo fissato. | Contratto, Ordine cliente |
 | Riga di iscrizione | Riga ordine di vendita | `sale.order.line` | Singolo corso a catalogo incluso in un'iscrizione. | — |
@@ -126,11 +128,32 @@ anno (`S-08`).
 
 **Un corso a catalogo di strumento per combinazione di categoria e durata**, più i corsi a
 catalogo collettivi. Oggi le categorie sono *bandistico* e *non bandistico* e le durate 30′,
-45′ e 60′; il collettivo è il Solfeggio. Ogni corso a catalogo porta le **lezioni
-previste**. Quelli di strumento portano anche la **durata in minuti**, hanno «Crea un ordine» =
+45′ e 60′; il collettivo è il Solfeggio. Quelli di strumento hanno «Crea un ordine» =
 Progetto e puntano al **modello di corso individuale**, uno per tutti. Il corso a catalogo
 collettivo ha «Crea un ordine» = Nulla e non punta a nessun progetto: sono i suoi corsi
 collettivi a indicarlo (`S-08`).
+
+**Unità di misura annua e quota.** Ogni corso a catalogo si vende in un'**unità di misura
+annua**, che vale le ore di un anno, e porta la **quota**, i minuti di insegnante per allievo
+per lezione. Le **lezioni previste** ne discendono, ore ÷ quota, e non si scrivono:
+
+| Unità di misura | Ore | Quota | Lezioni previste |
+|---|---|---|---|
+| Anno 30′ | 15 | 30′ | 30 |
+| Anno 45′ | 22,5 | 45′ | 30 |
+| Anno 60′ | 30 | 60′ | 30 |
+| Anno solfeggio | 7 | 15′ | 28 |
+
+Le quattro unità arrivano col modulo, nella categoria Orario lavorativo, il cui riferimento
+diventa **Ore**: ogni rapporto si legge come ore per anno. Fuori da quella categoria un corso a
+catalogo non si salva.
+
+**Quota e unità di misura non si cambiano** su un corso a catalogo con iscrizioni confermate:
+le lezioni previste di quelle iscrizioni ne dipendono, e cambierebbero anche i consuntivi
+allievo già calcolati. Un'offerta diversa è un corso a catalogo nuovo.
+
+Politica di fatturazione **prepagato**: si fattura la quantità ordinata, non le ore
+rendicontate.
 
 **Le varianti sono gli strumenti**: un attributo *Strumento*, di cui ogni corso a catalogo
 porta solo i valori che gli competono — gli strumenti della banda (Flauto, Clarinetto,
@@ -163,7 +186,7 @@ non ne risentono.
 | Fogli ore e **Fatturabile** attivi | senza Fatturabile non compare in «Modello progetto» |
 | **Nessuna lezione** dentro | la copia porta con sé anche i lavori |
 | **Una sola fase**, «Lezione» | il corso individuale eredita le quattro di Odoo come colonne del kanban |
-| **Tempo assegnato**, **Durata lezione**, **Lezioni previste** e **Responsabile** irrilevanti | il corso individuale li riceve dal corso a catalogo, dalla riga di iscrizione e dall'insegnante della riga (`S-03`, `S-06`): quelli del modello non si leggono |
+| **Tempo assegnato** e **Responsabile** irrilevanti | il corso individuale riceve il monte ore dalla riga (`S-06`) e l'insegnante dalla riga (`S-03`): quelli del modello non si leggono |
 
 L'ordine conta: prima la fase unica, **poi** l'archiviazione. Un modello archiviato non si
 modifica senza disarchiviarlo, e ogni corso individuale generato da lì in avanti copia le fasi
@@ -178,8 +201,9 @@ riga di iscrizione porta **prodotto + variante**, cioè corso a catalogo e strum
 
 | Sulla riga di iscrizione | Individuale | Collettivo |
 |---|---|---|
-| Prezzo | dal listino in testata | dal listino in testata |
-| Lezioni previste | dal corso a catalogo | dal corso a catalogo |
+| Quantità | 1 = anno intero, nell'unità di misura annua del corso a catalogo | come l'individuale |
+| Prezzo | dal listino in testata, per un anno | dal listino in testata, per un anno |
+| Lezioni previste | dalla quantità (`S-01`); scriverle cambia la quantità | come l'individuale |
 | Insegnante (fra i dipendenti) | facoltativo: diventa responsabile del corso individuale; vuoto → «In attesa di insegnante» | respinto: il responsabile sta sul corso collettivo |
 | Corso | — | facoltativo; vuoto → da assegnare (`S-08`) |
 | Alla conferma | nasce il corso individuale «\<strumento\> \<durata\> - \<allievo\>» | iscrive al corso collettivo, o a nessuno finché non è assegnato |
@@ -191,25 +215,40 @@ riga di iscrizione porta **prodotto + variante**, cioè corso a catalogo e strum
 **quantità zero** è annullata: non iscrive e non entra nel consuntivo allievo. Il prezzo
 concordato è quello della riga.
 
-**Iscrizione a metà anno**: prezzo e lezioni previste della riga si riducono a mano a quelli
-residui; il consuntivo allievo conta su quel numero (`S-09`). Si riducono **prima** di
-confermare: sul corso individuale le lezioni previste si copiano alla conferma, e una
-riduzione successiva vale per il consuntivo allievo ma non per il corso né per il wizard
-Genera lezioni.
+**Iscrizione a metà anno**: si scrivono le **lezioni rimaste** in «Lezioni previste», e la
+quantità diventa la frazione d'anno corrispondente, a due decimali (17 su 30 = 0,57). Prezzo
+e ore la seguono; rilette, le lezioni tornano quelle scritte. Con due decimali il prezzo si
+scosta dal proporzionale fino a 1,33 € l'anno. Il prezzo che
+ne esce può non essere tondo: il segretario ritocca il **prezzo unitario** a sua discrezione, e
+il consuntivo allievo, che usa il subtotale, resta coerente (`S-09`). «Aggiorna prezzi»
+sull'iscrizione riporta le righe al listino e cancella il ritocco.
+
+Si riduce **prima** di confermare: il monte ore del corso individuale nasce alla conferma, e
+una riduzione successiva vale per il consuntivo allievo e per il wizard Genera lezioni, ma non
+per il monte ore.
 
 ---
 
 ## S-04 · Assegnazione e lezioni
 
 Se il corso individuale è nato senza responsabile, la scuola glielo mette ora. Poi il wizard
-**Genera lezioni** propone quell'insegnante, si sceglie l'**aula**, e le lezioni nascono tutte
-con insegnante e aula.
+**Genera lezioni**: si sceglie l'**aula**, e le lezioni nascono tutte con aula e con
+**insegnante = responsabile del corso**, che il wizard non chiede. Senza responsabile il wizard
+si ferma. Anche la lezione aggiunta a mano, il saggio compreso, nasce col responsabile, salvo
+un insegnante indicato in creazione (il supplente). Cambiare il responsabile dopo non
+riassegna le lezioni già create: un supplente andrebbe perso.
 
 L'aula si sceglie **solo qui**: non risiede né sul corso né sull'insegnante.
 
-Il numero di lezioni proposto viene dalle **lezioni previste del corso**: sul corso
-individuale sono quelle della riga di iscrizione, copiate alla conferma, quindi già ridotte per
-un'iscrizione a metà anno; sul corso collettivo quelle del suo corso a catalogo.
+Le lezioni generate si chiamano **«Lezione»**, senza data: la data la mostra il nome
+visualizzato («Lezione 08/12/2026»), che la segue quando la lezione si sposta. La lista delle
+lezioni ha la colonna della data, con l'ora, ed è ordinata per data.
+
+Il numero di lezioni proposto viene dalle **lezioni previste**, meno i saggi (`S-05`): sul
+corso individuale quelle della sua riga di iscrizione, quindi già ridotte per un'iscrizione a
+metà anno; sul corso collettivo quelle di un anno intero del suo corso a catalogo. Se le
+lezioni del corso, con quelle da generare e i saggi, superano le previste, il wizard avvisa
+ma non blocca.
 
 ---
 
@@ -225,11 +264,11 @@ suoi corsi collettivi: un corso a catalogo pluriennale sommerebbe gli anni.
 
 | Quando | Cosa fa il segretario |
 |---|---|
-| **Inizio anno** | crea il corso a catalogo collettivo dell'anno («Crea un ordine» = Nulla, lezioni previste) e la sua regola nei listini. I corsi collettivi non ancora: nascono alla pianificazione |
+| **Inizio anno** | crea il corso a catalogo collettivo dell'anno («Crea un ordine» = Nulla, unità di misura annua, quota) e la sua regola nei listini. I corsi collettivi non ancora: nascono alla pianificazione |
 | **Iscrizione** | aggiunge la riga collettiva all'iscrizione; il **Corso** si compila solo se già deciso. Confermata senza corso, la riga compare nel filtro **«Collettivi da assegnare»** |
-| **Pianificazione** | crea i corsi collettivi: progetto con fogli ore e fatturabile, responsabile (l'insegnante), **durata**, **corso a catalogo** di appartenenza. Poi assegna le righe dal filtro — anche su iscrizioni già confermate — e genera le lezioni di ogni corso collettivo (`S-04`). La lista dei corsi collettivi mostra gli iscritti di ciascuno: la capienza è solo informativa |
-| **Iscrizione tardiva** | come un'iscrizione, con prezzo e lezioni previste ridotti a mano sulla riga; il corso si può indicare subito |
-| **Cambio di corso collettivo** | cambia il Corso sulla riga, e basta: prezzo e lezioni previste non cambiano |
+| **Pianificazione** | crea i corsi collettivi: progetto con fogli ore e fatturabile, responsabile (l'insegnante), **durata** della lezione del gruppo (obbligatoria), **corso a catalogo** di appartenenza. Poi assegna le righe dal filtro — anche su iscrizioni già confermate — e genera le lezioni di ogni corso collettivo (`S-04`). La lista dei corsi collettivi mostra gli iscritti di ciascuno: la capienza è solo informativa |
+| **Iscrizione tardiva** | come un'iscrizione, con la quantità ridotta alla frazione d'anno residua (`S-03`); il corso si può indicare subito |
+| **Cambio di corso collettivo** | cambia il Corso sulla riga, e basta: prezzo e quantità, quindi lezioni previste, non cambiano. La quota è dell'allievo, non del gruppo |
 
 Il corso di una riga di iscrizione è il **campo standard `project_id`** della riga:
 sulle righe individuali è il corso individuale generato alla conferma e non si sceglie, sulle
@@ -253,37 +292,39 @@ richiesta: serve da riparazione, non fa parte del flusso.
 
 ## S-05 · Lezioni previste: 28 lezioni ordinarie più 2 saggi
 
-La quota annua copre **30 lezioni**: 28 lezioni ordinarie e **2 saggi**, uno a metà anno e
-uno alla fine. È il numero in «Lezioni previste», ed è su quello che il consuntivo allievo
-divide la quota.
+Il prezzo annuo dello strumento copre **30 lezioni**: 28 lezioni ordinarie e **2 saggi**, uno
+a metà anno e uno alla fine. Il solfeggio copre **28 lezioni e nessun saggio**. È il numero in
+«Lezioni previste» (`S-01`), ed è su quello che il consuntivo allievo divide il prezzo.
 
 **Il saggio è una lezione a tutti gli effetti**: sta nel corso dell'allievo, ha le sue
 presenze e la sua rendicontazione, e l'insegnante è pagato per la **durata di quell'allievo**.
 Chi porta al saggio due allievi da 30′ e tre da un'ora rendiconta 4 ore, non una.
 
 **Si generano le 28 lezioni ordinarie, non 30.** La data dei saggi si sa solo poche settimane
-prima, quindi il wizard ha un campo **«Saggi esclusi»** (2 di serie) e propone di generare
-*lezioni previste − saggi*. I due saggi si aggiungono a mano al corso quando la data è nota;
-la lezione creata a mano eredita già le presenze dagli iscritti.
+prima, quindi il wizard ha un campo **«Saggi esclusi»** e propone di generare *lezioni
+previste − saggi*. I saggi esclusi sono **2 sui corsi individuali, 0 sui collettivi**, e si
+possono cambiare. I due saggi si aggiungono a mano al corso quando la data è nota; la lezione
+creata a mano eredita già le presenze dagli iscritti.
 
 ⚠️ Generare tutte e 30 le lezioni previste e poi aggiungere i saggi darebbe **32** lezioni, e
 il consuntivo allievo ne conterebbe 30 su 30: le lezioni mai erogate sparirebbero senza un
-errore.
+errore. Per questo il wizard avvisa quando il corso finirebbe oltre le previste (`S-04`).
 
 
 ---
 
 ## S-06 · Tempo assegnato
 
-Il corso a catalogo porta la **durata della lezione in minuti**. Alla conferma
-dell'iscrizione scende sul corso individuale, e da lì su ogni lezione come **Tempo
-assegnato**, in ore. Per i collettivi la durata sta invece sul **corso collettivo** (`S-08`),
-e da lì sulle sue lezioni.
+Ogni lezione nasce col **Tempo assegnato** della sua durata, in ore. La durata della lezione
+individuale è la **quota** del corso a catalogo della riga di iscrizione: il corso
+individuale non ne ha una sua. Per i collettivi la durata sta sul **corso collettivo**
+(`S-08`), ed è quella del gruppo.
 
 | Dove | Valore |
 |---|---|
-| Lezione | la durata |
-| Corso individuale | durata × lezioni previste |
+| Lezione individuale | la quota del corso a catalogo |
+| Lezione collettiva | la durata del corso collettivo |
+| Corso individuale | lezioni previste della riga × quota: 22:30 per un anno intero da 45′, 2:00 per 4 lezioni da 30′. Non la quantità convertita in ore, che con due decimali darebbe 1:57 |
 
 Vale anche per le lezioni aggiunte a mano, saggi compresi.
 
@@ -305,7 +346,7 @@ presenza da registrare per la data originale.
 
 **Per riga di iscrizione** (confermata):
 
-- prezzo lezione = prezzo della riga ÷ lezioni previste;
+- prezzo lezione = **subtotale** della riga (prezzo unitario × quantità) ÷ lezioni previste;
 - lezioni erogate = rendicontate in cui l'allievo era in elenco, con qualunque esito, recuperi
   compresi;
 - lezioni pagate = erogate − non fruite, al massimo le previste;

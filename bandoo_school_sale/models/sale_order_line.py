@@ -6,10 +6,10 @@ from odoo.tools import format_amount
 
 # Campi che decidono il consuntivo allievo o il corso: cambiati a
 # iscrizione confermata, lasciano traccia nel chatter. (Il prodotto
-# no: `sale_project` non lo lascia cambiare su un servizio confermato)
+# no: `sale_project` non lo lascia cambiare su un servizio confermato; la
+# quantità, da cui vengono le lezioni previste, la traccia già Odoo)
 TRACKED_FIELDS = {
     'price_unit': 'Prezzo unitario',
-    'x_lesson_target': 'Lezioni previste',
     'project_id': 'Corso'
 }
 
@@ -26,19 +26,40 @@ class SaleOrderLine(models.Model):
     )
     x_lesson_target = fields.Integer(
         string='Lezioni previste', compute='_compute_x_lesson_target',
-        store=True, readonly=False,
-        help='Lezioni coperte da questa iscrizione, saggi compresi: '
-             'proposte dal corso a catalogo, da ridurre prima di confermare '
-             'per le iscrizioni a metà anno (il consuntivo allievo detrae le '
-             'lezioni mai erogate rispetto a questo numero).',
+        inverse='_inverse_x_lesson_target', readonly=False,
+        help="Lezioni coperte da questa iscrizione, saggi compresi: le ore "
+             "della quantità divise per la quota del corso a catalogo. Per "
+             "un'iscrizione a metà anno si scrivono le lezioni rimaste, e la "
+             "quantità ne discende (il consuntivo allievo detrae le lezioni "
+             "mai erogate rispetto a questo numero).",
     )
 
-    @api.depends('product_id')
+    @api.depends('product_id', 'product_uom_qty', 'product_uom')
     def _compute_x_lesson_target(self):
-        """Proposte dal corso a catalogo, uguali per individuali e collettivi
-        (`D-35`); restano modificabili per le iscrizioni a metà anno."""
+        """Ricavate, non copiate: la quantità è l'unico dato (`D-39`)."""
         for line in self:
-            line.x_lesson_target = line.product_id.x_lesson_target
+            line.x_lesson_target = line.product_id.product_tmpl_id._x_lessons_in(
+                line.product_uom_qty, line.product_uom) if line.product_id else 0
+
+    def _inverse_x_lesson_target(self):
+        """Le lezioni scritte diventano quantità, e il prezzo la segue.
+
+        La quantità ha i decimali della sua precisione: 4 lezioni su 30 sono
+        0,13, che rilette danno di nuovo 4 (`_x_lessons_in` arrotonda).
+        """
+        hour = self.env.ref('uom.product_uom_hour')
+        for line in self:
+            product = line.product_id.product_tmpl_id
+            if not product.x_is_course or not line.product_uom:
+                continue
+            hours = line.x_lesson_target * product.x_lesson_duration / 60
+            line.product_uom_qty = hours / hour.factor * line.product_uom.factor
+
+    @api.onchange('x_lesson_target')
+    def _onchange_x_lesson_target(self):
+        # Nel form l'inverse non scatta: la quantità va scritta subito, perché
+        # il prezzo della riga la segua prima del salvataggio.
+        self._inverse_x_lesson_target()
 
     @api.constrains('product_id', 'order_id', 'product_uom_qty')
     def _check_one_line_per_course(self):
@@ -144,25 +165,19 @@ class SaleOrderLine(models.Model):
         values = super()._timesheet_create_project_prepare_values()
         if self.product_id.x_is_course:
             values['user_id'] = self.x_teacher_id.id or False
-            # La durata scende dal corso a catalogo al corso, e da lì a ogni
-            # lezione. Il monte ore del corso non si imposta qui: lo
-            # riscriverebbe `sale_timesheet` subito dopo la copia.
-            values['x_lesson_duration'] = self.product_id.x_lesson_duration
-            # Le lezioni previste della riga, non del corso a catalogo: per
-            # un'iscrizione a metà anno sono già ridotte, e il wizard
-            # Genera lezioni propone quelle.
-            values['x_lesson_target'] = self.x_lesson_target
         return values
 
     def _timesheet_create_project(self):
+        # Durata e lezioni previste restano sulla riga e sul corso a catalogo,
+        # non si copiano sul corso.
         project = super()._timesheet_create_project()
-        if self.product_id.x_is_course and project.x_lesson_duration:
-            # Monte ore dell'anno: lezioni previste per durata. Va scritto qui e
-            # non fra i valori di creazione, perche' `sale_timesheet` lo
-            # ricalcola dopo la copia dalla quantita' ordinata — una riga
-            # d'iscrizione vale 1, quindi ne uscirebbe un'ora.
+        if self.product_id.x_is_course:
+            # Monte ore = lezioni previste × quota, invece della conversione di
+            # `sale_timesheet`: la quantità ha due decimali, e 4 lezioni su 30
+            # (0,13 anni) darebbero 1:57 invece di 2:00 da 30′. Per un anno
+            # intero i due conti coincidono.
             project.allocated_hours = (
-                project.x_lesson_duration / 60.0 * (self.x_lesson_target or 0))
+                self.x_lesson_target * self.product_id.x_lesson_duration / 60)
         if self.product_id.x_is_course and self.order_id.partner_id:
             # Nome operativo al posto dello standard "S00042 - <template>".
             # Il nome progetto è traducibile e la copia del template porta le

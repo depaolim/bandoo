@@ -25,7 +25,7 @@
         ('state', '=', 'sale'),
         ('product_uom_qty', '>', 0),
         ('project_id', '=', False),
-        ('product_id.x_lesson_target', '>', 0),
+        ('product_id.x_lesson_duration', '>', 0),
         ('product_id.service_tracking', '=', 'no'),
         ]</field>
     </record>

@@ -10,7 +10,6 @@
                     <group>
                         <field name="project_id"/>
                         <field name="room_id"/>
-                        <field name="user_ids" widget="many2many_tags"/>
                         <field name="name_prefix"/>
                     </group>
                     <group>

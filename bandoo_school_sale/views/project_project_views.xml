@@ -5,11 +5,17 @@
         <field name="model">project.project</field>
         <field name="inherit_id" ref="bandoo_school.view_project_form_bandoo_school"/>
         <field name="arch" type="xml">
-            <field name="x_lesson_target" position="before">
+            <field name="x_lesson_duration" position="before">
                 <field name="sale_line_id" invisible="1"/>
                 <field name="x_course_product_id"
                        options="{'no_create': True}"
                        invisible="sale_line_id"/>
+            </field>
+            <!-- Sul corso individuale la durata è la quota del corso a
+                 catalogo della riga: il corso non ne ha una sua. -->
+            <field name="x_lesson_duration" position="attributes">
+                <attribute name="invisible">sale_line_id</attribute>
+                <attribute name="required">x_course_product_id</attribute>
             </field>
         </field>
     </record>

@@ -36,7 +36,7 @@ class TestTeacherHoursBill(TransactionCase):
             'price': 30.0, 'min_qty': 0.0,
         })
         self.course = self.env['project.project'].create({
-            'name': 'Pianoforte', 'x_lesson_target': 4,
+            'name': 'Pianoforte',
         })
 
     def _task(self, name, project=None):

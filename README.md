@@ -19,12 +19,15 @@ Dipende da: `project`, `hr_timesheet`, `contacts`.
 Iscrizioni, rette e conguaglio sopra `bandoo_school`. L'iscrizione è un
 `sale.order` standard **intestato allo studente** (che è anche l'iscritto); un
 `product.template` è marcato come corso tramite il tracciamento (individuale con
-template di progetto, collettivo con progetto condiviso) e la `sale.order.line`
-porta il corso e le lezioni previste. Espone due viste SQL di conguaglio:
+template di progetto, collettivo con progetto condiviso) e si vende in
+un'unità di misura annua della categoria Orario lavorativo, con la quota in
+minuti per allievo: le lezioni previste della `sale.order.line` si ricavano
+dalla quantità, e il monte ore del corso individuale è lezioni previste per
+quota. Espone due viste SQL di conguaglio:
 `bandoo.enrollment.settlement` (per iscrizione: prezzo annuo, lezioni svolte,
 assenze giustificate, detrazione, rate) e `bandoo.order.settlement` (per ordine).
 
-Dipende da: `bandoo_school`, `sale_management`, `sale_project`.
+Dipende da: `bandoo_school`, `sale_management`, `sale_project`, `sale_timesheet`.
 
 ## bandoo_branding
 

@@ -47,12 +47,12 @@ class OrderSettlement(models.Model):
                 so.id AS id,
                 so.id AS order_id,
                 so.partner_id AS partner_id,
-                SUM(sol.price_unit) AS total_price
+                SUM(sol.price_subtotal) AS total_price
             FROM sale_order_line sol
             JOIN sale_order so ON so.id = sol.order_id
             JOIN product_product pp_line ON pp_line.id = sol.product_id
             JOIN product_template pt ON pt.id = pp_line.product_tmpl_id
-            WHERE pt.x_lesson_target > 0
+            WHERE pt.x_lesson_duration > 0
               AND so.state = 'sale'
               AND sol.product_uom_qty > 0
             GROUP BY so.id, so.partner_id
