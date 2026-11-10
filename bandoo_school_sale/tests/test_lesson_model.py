@@ -116,6 +116,10 @@ class TestLessonModel(BandooCase):
         self.assertEqual(order.order_line.project_id.allocated_hours, 3.0)
 
     def test_fatturazione_acconti_detrazione_saldo(self):
+        # Senza dati demo nessun piano dei conti, quindi nessun giornale di vendita
+        # né conti sul partner: la fattura non si crea. Il piano generico li dà tutti.
+        self.env['account.chart.template'].try_loading(
+            'generic_coa', company=self.env.company, install_demo=False)
         # Il flusso di `S-12` su Odoo standard: due acconti a importo fisso,
         # la riga di detrazione dal consuntivo, il saldo uguale alla rata 3.
         detraction = self.env['product.product'].create({
