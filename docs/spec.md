@@ -115,6 +115,12 @@ consuntivazione e ordini ore insegnante stanno accanto al registro scuola e non 
 L'**allievo** è il contatto principale e l'intestatario delle sue iscrizioni; il
 **genitore** è un contatto associato nella sua scheda, ripetuto per ogni allievo.
 
+L'**uscita autonoma** — l'allievo può lasciare la scuola da solo a fine lezione — è il tag
+«Uscita autonoma» sul contatto: lo mette la segreteria, l'insegnante lo legge sulla scheda. Il
+modulo firmato dal genitore, se c'è, sta allegato al contatto. Senza tag l'allievo non esce da
+solo: «non autorizzato» e «non ancora registrato» non si distinguono. Ogni cambio di etichetta
+lascia nel chatter del contatto chi l'ha fatto e quando.
+
 L'**insegnante** è un dipendente con utente, creato dalla scheda del dipendente: così ha un
 **contatto di lavoro**, che è il fornitore dei suoi ordini ore insegnante (`S-11`).
 

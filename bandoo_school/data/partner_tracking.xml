@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Traccia nel chatter del contatto chi cambia le etichette e quando (D-43).
+
+  Il tracciamento nativo di Odoo non copre i many2many: `tracking=True` su
+  `category_id` non produrrebbe nulla. Ci pensa `tracking_manager` (OCA), che
+  si configura per modello e per campo: qui si accende sul contatto e si
+  marca il campo etichette. `custom_tracking` passa dal `write` del modulo,
+  che lo scrive da solo senza toccare le proprietà protette del campo base.
+
+  Senza `noupdate`, di proposito: i due record esistono già (sono di `base`)
+  e un file noupdate in aggiornamento li salterebbe, cioè la configurazione
+  arriverebbe solo su un database installato da zero. Il file tocca solo
+  questi due valori: gli altri campi che la segreteria decide di tracciare da
+  Impostazioni → Tecnico → Modelli restano com'erano.
+-->
+<odoo>
+
+    <record id="base.model_res_partner" model="ir.model">
+        <field name="active_custom_tracking" eval="True"/>
+    </record>
+
+    <record id="base.field_res_partner__category_id" model="ir.model.fields">
+        <field name="custom_tracking" eval="True"/>
+    </record>
+
+</odoo>

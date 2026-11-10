@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Tag dei contatti usati dalla scuola (D-43).
+
+  «Uscita autonoma»: l'allievo è autorizzato a lasciare la scuola da solo al
+  termine della lezione. La segreteria lo mette dalla scheda del contatto; il
+  modulo firmato dal genitore, se c'è, sta allegato al contatto. Un tag dice
+  solo presente/assente: «non autorizzato» e «non ancora registrato» coincidono.
+
+  `noupdate="1"`: la segreteria può rinominarlo o cambiargli colore senza che
+  un aggiornamento dei moduli lo riporti com'era.
+-->
+<odoo noupdate="1">
+
+    <record id="partner_category_autonomous_exit" model="res.partner.category">
+        <field name="name">Uscita autonoma</field>
+        <field name="color">2</field>
+    </record>
+
+</odoo>

@@ -1,6 +1,6 @@
 {
     'name': 'Bandoo School',
-    'version': '18.0.1.9.0',
+    'version': '18.0.1.10.0',
     'summary': 'Gestione corsi, lezioni e presenze per la scuola di musica',
     'category': 'Project',
     'depends': [
@@ -9,11 +9,14 @@
         'hr_timesheet',
         'partner_firstname',
         'project',
+        'tracking_manager',
     ],
     'data': [
         'security/ir.model.access.csv',
         'data/names_config.xml',
         'data/contacts_defaults.xml',
+        'data/partner_tags.xml',
+        'data/partner_tracking.xml',
         'data/export_lists.xml',
         'views/bandoo_room_views.xml',
         'views/project_project_views.xml',
