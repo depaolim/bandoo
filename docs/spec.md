@@ -366,6 +366,15 @@ una non fruita invece di andare perso sotto il tetto. Un recupero conta solo se 
 rendicontata con l'allievo in elenco: il riallineamento (`S-08`) toglie dalle lezioni non
 rendicontate chi non è iscritto al corso.
 
+Un recupero è una **lezione propria**, con la sua rendicontazione e le sue presenze, anche se
+tenuta di seguito a un'altra: non si registra allungando la lezione accanto. Il consuntivo
+allievo conta lezioni, non minuti: una lezione da 60′ al posto di due da 30′ vale una erogata
+e la non fruita resta detratta.
+
+Per lo stesso motivo una lezione rendicontata **si paga intera**, qualunque sia la durata
+rendicontata: svolta in parte o più lunga del previsto, per l'allievo vale una erogata.
+L'insegnante invece è pagato sulle ore rendicontate (`S-11`).
+
 **Per iscrizione** valgono le stesse rate sul totale, con la somma delle detrazioni; la rata
 3 **non scende sotto zero**: un credito oltre l'iscrizione è perso. Sono queste le rate
 dovute. Entrambi i consuntivi sono calcolati all'apertura, non memorizzati.
@@ -427,8 +436,9 @@ sue righe. Il listino sull'iscrizione **è** la traccia dello sconto.
 L'insegnante che fattura è un **fornitore**. Il wizard **Consuntivo insegnante** raccoglie le
 rendicontazioni **fatte da lui** sulle lezioni e non ancora in un ordine ore insegnante, anche
 di un solo corso, e ne fa un **ordine ore insegnante** (ordine di acquisto) intestato al suo
-contatto di lavoro: una riga per lezione, quantità = ore. Conta chi rendiconta, non il
-responsabile del corso: il supplente ha il suo ordine.
+contatto di lavoro: una riga per lezione, quantità = **ore rendicontate**, non quelle previste
+dalla lezione. Conta chi rendiconta, non il responsabile del corso: il supplente ha il suo
+ordine.
 
 Il prodotto **Ore insegnante** è un servizio normale, proposto dalle impostazioni Acquisti. La
 tariffa sta nel **listino fornitore** del prodotto, una riga per insegnante; senza riga vale il
