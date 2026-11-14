@@ -7,21 +7,14 @@ from odoo.tests.common import TransactionCase
 class TestTeacherHoursBill(TransactionCase):
     """Wizard: dalle ore non liquidate a un ordine d'acquisto per l'insegnante.
 
-    Prezzo per insegnante dal listino fornitore (product.supplierinfo);
-    prodotto scelto nel wizard, con default da impostazione.
+    Il prodotto ore è del corso (`S-11`), portato dal modello di progetto;
+    il prezzo lo fa purchase: costo del prodotto, o listino fornitore.
     """
 
     def setUp(self):
         super().setUp()
-        # Prodotto normale (non seed di modulo): costo = fallback senza listino.
-        self.product = self.env['product.product'].create({
-            'name': 'Ora di insegnamento', 'type': 'service',
-            'purchase_ok': True, 'standard_price': 20.0,
-            'uom_id': self.env.ref('uom.product_uom_hour').id,
-            'uom_po_id': self.env.ref('uom.product_uom_hour').id,
-        })
-        self.env['ir.config_parameter'].sudo().set_param(
-            'bandoo_school_purchase.teacher_hour_product_id', str(self.product.id))
+        # Prodotto normale (non seed di modulo): costo = tariffa normale.
+        self.product = self._hour_product('Ore strumento', 20.0)
 
         # hr_employee_firstname (D-22) crea il work contact e vi scrive
         # cognome e nome: il partner dell'insegnante non si crea a mano.
@@ -35,8 +28,19 @@ class TestTeacherHoursBill(TransactionCase):
             'product_tmpl_id': self.product.product_tmpl_id.id,
             'price': 30.0, 'min_qty': 0.0,
         })
-        self.course = self.env['project.project'].create({
-            'name': 'Pianoforte',
+        self.course = self._course('Pianoforte')
+
+    def _hour_product(self, name, cost):
+        hour = self.env.ref('uom.product_uom_hour')
+        return self.env['product.product'].create({
+            'name': name, 'type': 'service', 'purchase_ok': True,
+            'standard_price': cost, 'uom_id': hour.id, 'uom_po_id': hour.id,
+        })
+
+    def _course(self, name, product=None):
+        return self.env['project.project'].create({
+            'name': name,
+            'x_teacher_hour_product_id': (product or self.product).id,
         })
 
     def _task(self, name, project=None):
@@ -52,11 +56,10 @@ class TestTeacherHoursBill(TransactionCase):
             'date': '2026-09-01',
         })
 
-    def _bill(self, employee=None, project=None, product=None):
+    def _bill(self, employee=None, project=None):
         wizard = self.env['bandoo.teacher.hours.bill'].create({
             'employee_id': (employee or self.teacher).id,
             'project_id': project.id if project else False,
-            'product_id': (product or self.product).id,
         })
         action = wizard.action_create_order()
         return self.env['purchase.order'].browse(action['res_id'])
@@ -87,19 +90,35 @@ class TestTeacherHoursBill(TransactionCase):
         po = self._bill(employee=other)
         self.assertEqual(po.order_line.price_unit, 20.0)
 
-    def test_default_prodotto_da_impostazione(self):
-        # Il wizard propone il prodotto salvato in ir.config_parameter.
-        defaults = self.env['bandoo.teacher.hours.bill'].default_get(['product_id'])
-        self.assertEqual(defaults.get('product_id'), self.product.id)
+    def test_prodotto_per_riga_dal_corso(self):
+        # Stesso insegnante, due tipi di lezione: un ordine, due prezzi.
+        theory_hours = self._hour_product('Ore solfeggio', 25.0)
+        theory = self._course('Solfeggio A', theory_hours)
+        self._timesheet(self._task('L1'), hours=0.75)
+        self._timesheet(self._task('S1', project=theory))
+        po = self._bill()
+        self.assertEqual(len(po.order_line), 2)
+        by_product = {l.product_id: l for l in po.order_line}
+        self.assertEqual(by_product[self.product].price_unit, 30.0)
+        self.assertEqual(by_product[self.product].product_qty, 0.75)
+        self.assertEqual(by_product[theory_hours].price_unit, 25.0)
 
-    def test_prodotto_modificabile_nel_form(self):
-        # Campo obbligatorio: se non è nel form e l'impostazione manca,
-        # il wizard fallisce con un errore SQL non rimediabile dall'utente.
-        arch = self.env['bandoo.teacher.hours.bill'].get_view(
-            self.env.ref(
-                'bandoo_school_purchase.bandoo_teacher_hours_bill_form').id,
-            'form')['arch']
-        self.assertIn('name="product_id"', arch)
+    def test_corso_senza_prodotto_ore_ferma_il_wizard(self):
+        # Errore di configurazione: niente ordine, e il messaggio nomina il corso.
+        self._timesheet(self._task('L1'))
+        bare = self.env['project.project'].create({'name': 'Prove'})
+        self._timesheet(self._task('P1', project=bare))
+        with self.assertRaises(UserError) as cm:
+            self._bill()
+        self.assertIn('Prove', str(cm.exception))
+        self.assertFalse(self.env['purchase.order'].search(
+            [('partner_id', '=', self.teacher_partner.id)]))
+
+    def test_copia_del_modello_porta_il_prodotto_ore(self):
+        # sale_project e project_template creano i corsi con copy(): il campo
+        # deve viaggiare con la copia.
+        copy = self.course.copy({'name': 'Pianoforte 2'})
+        self.assertEqual(copy.x_teacher_hour_product_id, self.product)
 
     def test_ore_stesso_task_sommate(self):
         t1 = self._task('L1')
@@ -131,7 +150,7 @@ class TestTeacherHoursBill(TransactionCase):
         self.assertEqual(len(po_sub.order_line), 1)
 
     def test_filtro_corso(self):
-        other = self.env['project.project'].create({'name': 'Solfeggio'})
+        other = self._course('Solfeggio')
         self._timesheet(self._task('L1'))
         self._timesheet(self._task('S1', project=other))
         po = self._bill(project=self.course)

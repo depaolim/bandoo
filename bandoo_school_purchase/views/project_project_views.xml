@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_project_form_bandoo_purchase" model="ir.ui.view">
+        <field name="name">project.project.form.bandoo.purchase</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="bandoo_school.view_project_form_bandoo_school"/>
+        <field name="arch" type="xml">
+            <!-- Accanto alla durata: i dati del corso che il modello di
+                 progetto porta nei corsi stanno insieme, in testa al form. -->
+            <field name="x_lesson_duration" position="after">
+                <field name="x_teacher_hour_product_id"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

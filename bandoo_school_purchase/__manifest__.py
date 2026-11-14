@@ -1,7 +1,7 @@
 {
     'name': 'Bandoo School Purchase',
-    'version': '18.0.1.1.0',
-    'summary': 'Consuntivo insegnante: ordine ore insegnante dalle rendicontazioni',
+    'version': '18.0.2.0.0',
+    'summary': 'Consuntivo insegnante: ordine ore insegnante dalle rendicontazioni, prodotto ore per tipo di lezione dal corso',
     'category': 'Purchases',
     'depends': [
         'bandoo_school',
@@ -9,7 +9,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/res_config_settings_views.xml',
+        'views/project_project_views.xml',
         'wizards/teacher_hours_bill_views.xml',
     ],
     'author': 'Marco De Paoli',

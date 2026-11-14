@@ -184,7 +184,7 @@ non ne risentono.
 
 | | Cosa | Quanti | Quando si creano |
 |---|---|---|---|
-| Modelli di corso individuale | stampi, non corsi; si **archiviano** dopo averli collegati | uno, comune a tutti i corsi a catalogo di strumento | una volta |
+| Modelli di corso individuale | stampi, non corsi; si **archiviano** dopo averli collegati | uno per **prodotto ore** (`S-11`): oggi uno, comune a tutti i corsi a catalogo di strumento | una volta |
 | Corsi collettivi | i corsi con più allievi | quanti ne servono, per corso a catalogo collettivo | **ogni anno**, alla pianificazione (`S-08`) |
 | Corsi individuali | i corsi con un solo allievo | uno per riga di iscrizione individuale | alla conferma dell'iscrizione |
 
@@ -192,6 +192,7 @@ non ne risentono.
 |---|---|
 | Fogli ore e **Fatturabile** attivi | senza Fatturabile non compare in «Modello progetto» |
 | **Nessuna lezione** dentro | la copia porta con sé anche i lavori |
+| **Prodotto ore insegnante** | la copia lo porta nel corso individuale: è così che la lezione sa come si paga (`S-11`) |
 | **Una sola fase**, «Lezione» | il corso individuale eredita le quattro di Odoo come colonne del kanban |
 | **Tempo assegnato** e **Responsabile** irrilevanti | il corso individuale riceve il monte ore dalla riga (`S-06`) e l'insegnante dalla riga (`S-03`): quelli del modello non si leggono |
 
@@ -273,7 +274,7 @@ suoi corsi collettivi: un corso a catalogo pluriennale sommerebbe gli anni.
 |---|---|
 | **Inizio anno** | crea il corso a catalogo collettivo dell'anno («Crea un ordine» = Nulla, unità di misura annua, quota) e la sua regola nei listini. I corsi collettivi non ancora: nascono alla pianificazione |
 | **Iscrizione** | aggiunge la riga collettiva all'iscrizione; il **Corso** si compila solo se già deciso. Confermata senza corso, la riga compare nel filtro **«Collettivi da assegnare»** |
-| **Pianificazione** | crea i corsi collettivi: progetto con fogli ore e fatturabile, responsabile (l'insegnante), **durata** della lezione del gruppo (obbligatoria), **corso a catalogo** di appartenenza. Poi assegna le righe dal filtro — anche su iscrizioni già confermate — e genera le lezioni di ogni corso collettivo (`S-04`). La lista dei corsi collettivi mostra gli iscritti di ciascuno: la capienza è solo informativa |
+| **Pianificazione** | crea i corsi collettivi: progetto con fogli ore e fatturabile, responsabile (l'insegnante), **durata** della lezione del gruppo (obbligatoria), **corso a catalogo** di appartenenza, **prodotto ore insegnante** (`S-11`). Poi assegna le righe dal filtro — anche su iscrizioni già confermate — e genera le lezioni di ogni corso collettivo (`S-04`). La lista dei corsi collettivi mostra gli iscritti di ciascuno: la capienza è solo informativa |
 | **Iscrizione tardiva** | come un'iscrizione, con la quantità ridotta alla frazione d'anno residua (`S-03`); il corso si può indicare subito |
 | **Cambio di corso collettivo** | cambia il Corso sulla riga, e basta: prezzo e quantità, quindi lezioni previste, non cambiano. La quota è dell'allievo, non del gruppo |
 
@@ -440,8 +441,20 @@ contatto di lavoro: una riga per lezione, quantità = **ore rendicontate**, non 
 dalla lezione. Conta chi rendiconta, non il responsabile del corso: il supplente ha il suo
 ordine.
 
-Il prodotto **Ore insegnante** è un servizio normale, proposto dalle impostazioni Acquisti. La
-tariffa sta nel **listino fornitore** del prodotto, una riga per insegnante; senza riga vale il
-costo del prodotto. Le imposte le decide il regime dell'insegnante.
+Lo stesso insegnante è pagato diversamente secondo il **tipo di lezione**: una tariffa per
+il solfeggio, una per lo strumento, se serve una per bandistico e una per non bandistico. Il
+tipo di lezione è un **prodotto ore** di acquisto, un servizio normale in Ore: *Ore
+solfeggio*, *Ore strumento*. Il **corso** porta il suo prodotto ore: il corso individuale lo
+eredita dal modello di progetto, uno per prodotto ore (`S-02`); il corso collettivo lo riceve
+a mano alla pianificazione (`S-08`). Il wizard sceglie il prodotto **riga per riga** dal corso della
+lezione: un ordine per insegnante, righe a prezzi diversi. Un corso senza prodotto ore è un
+errore di configurazione: il wizard **si ferma** e dice quali corsi mancano, non paga con un
+prodotto di ripiego.
+
+La **tariffa normale** è il costo del prodotto ore, per ora. Il **listino fornitore** del
+prodotto è l'eccezione: una riga per insegnante, con validità nel tempo, usata solo dove un
+insegnante ha una tariffa sua; una riga senza insegnante con validità vale per tutti da quella
+data. Il wizard non imposta il prezzo: lo calcola purchase dal listino o, in sua assenza, dal
+costo. Le imposte le decide il regime dell'insegnante.
 
 Le ore messe in ordine non si riprendono; annullando l'ordine tornano liquidabili.

@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import _, fields, models
 from odoo.exceptions import UserError
 
 
@@ -15,25 +15,6 @@ class TeacherHoursBill(models.TransientModel):
         'project.project', string='Corso',
         help='Facoltativo: limita al solo corso indicato.',
     )
-    product_id = fields.Many2one(
-        'product.product', string='Prodotto ore', required=True,
-        domain=[('purchase_ok', '=', True)],
-        default=lambda self: self._default_product_id(),
-        help="Voce d'ordine per le ore. Il prezzo per insegnante viene dal "
-             "listino fornitore del prodotto (tab Acquisti → Fornitori); "
-             "in assenza di listino si usa il costo del prodotto.",
-    )
-
-    @api.model
-    def _default_product_id(self):
-        param = self.env['ir.config_parameter'].sudo().get_param(
-            'bandoo_school_purchase.teacher_hour_product_id')
-        if param and param.isdigit():
-            product = self.env['product.product'].browse(int(param))
-            if product.exists():
-                return product.id
-        return False
-
     def action_create_order(self):
         self.ensure_one()
 
@@ -50,6 +31,16 @@ class TeacherHoursBill(models.TransientModel):
         if not timesheets:
             raise UserError(_(
                 'Nessuna ora da liquidare per %s.') % self.employee_id.display_name)
+
+        # Il prodotto ore è del corso (`S-11`): senza, non si inventa un
+        # prezzo. Si ferma prima di creare l'ordine, nominando i corsi.
+        missing = timesheets.project_id.filtered(
+            lambda p: not p.x_teacher_hour_product_id)
+        if missing:
+            raise UserError(_(
+                'Questi corsi non hanno un prodotto ore insegnante: %s. '
+                'Impostarlo sul corso, poi rilanciare.')
+                % ', '.join(missing.mapped('display_name')))
 
         partner = (
             self.employee_id.work_contact_id
@@ -74,14 +65,16 @@ class TeacherHoursBill(models.TransientModel):
 
         for task, lines in by_task.items():
             hours = sum(lines.mapped('unit_amount'))
-            # Non imposto price_unit: purchase lo calcola dal listino del
-            # fornitore di riga (l'insegnante) o, se assente, dal costo prodotto.
+            # Un ordine solo, prodotto per riga dal corso della lezione: righe
+            # a prezzi diversi. Non imposto price_unit: purchase lo calcola
+            # dal listino fornitore (l'insegnante) o dal costo del prodotto.
+            product = task.project_id.x_teacher_hour_product_id
             pol = self.env['purchase.order.line'].create({
                 'order_id': order.id,
-                'product_id': self.product_id.id,
+                'product_id': product.id,
                 'name': '%s (%s)' % (task.name, task.project_id.name or ''),
                 'product_qty': hours,
-                'product_uom': self.product_id.uom_po_id.id,
+                'product_uom': product.uom_po_id.id,
             })
             lines.x_teacher_bill_line_id = pol
 

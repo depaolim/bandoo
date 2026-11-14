@@ -1,7 +1,7 @@
 # Addon Bandoo
 
 Addon Odoo 18 per Bandoo — una scuola di musica costruita sulle app Progetto,
-Foglio ore e Vendite. Tre moduli stratificati per dipendenza.
+Foglio ore e Vendite. Quattro moduli stratificati per dipendenza.
 
 ## bandoo_school
 
@@ -28,6 +28,18 @@ quota. Espone due viste SQL di conguaglio:
 assenze giustificate, detrazione, rate) e `bandoo.order.settlement` (per ordine).
 
 Dipende da: `bandoo_school`, `sale_management`, `sale_project`, `sale_timesheet`.
+
+## bandoo_school_purchase
+
+Consuntivo insegnante sopra `bandoo_school`. L'insegnante è un fornitore: la procedura
+`bandoo.teacher.hours.bill` raccoglie le sue rendicontazioni non ancora liquidate e ne fa un
+ordine di acquisto intestato al suo contatto di lavoro, una riga per lezione con le ore
+rendicontate. Il prodotto di ogni riga è il **prodotto ore** del corso della lezione
+(`x_teacher_hour_product_id` su `project.project`, ereditato dal modello di progetto): un
+prodotto per tipo di lezione, col costo come tariffa; il prezzo lo calcola purchase. Le ore in
+ordine sono bloccate; annullare l'ordine le libera.
+
+Dipende da: `bandoo_school`, `purchase`.
 
 ## bandoo_branding
 
